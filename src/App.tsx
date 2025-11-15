@@ -72,17 +72,17 @@ function App() {
         }
       `}</style>
       <header className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">📐</span>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-6">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+            <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-base sm:text-lg">📐</span>
             </div>
-            <div>
-              <div className="text-xl font-bold text-slate-900 dark:text-white">FPM BuildTrack</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">Project Management</div>
+            <div className="min-w-0">
+              <div className="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">FPM BuildTrack</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Project Management</div>
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-2 sm:gap-4 flex-shrink-0">
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
@@ -90,12 +90,12 @@ function App() {
             >
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
-            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-lg">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Role:</span>
+            <div className="hidden sm:flex items-center gap-2 sm:gap-3 bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 rounded-lg">
+              <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">Role:</span>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as Role)}
-                className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-md px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-md px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="site_manager">Site Manager</option>
                 <option value="project_manager">Project Manager</option>
@@ -103,15 +103,15 @@ function App() {
               </select>
             </div>
             {!online && (
-              <span className="ml-2 text-xs px-3 py-2 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-200 rounded-full font-medium">⚠ Offline</span>
+              <span className="text-xs px-2 py-1 sm:px-3 sm:py-2 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-200 rounded-full font-medium flex-shrink-0">⚠</span>
             )}
           </div>
         </div>
-        <nav className="max-w-7xl mx-auto px-6 pb-4 flex gap-1 overflow-x-auto">
+        <nav className="max-w-7xl mx-auto px-3 sm:px-6 pb-2 sm:pb-4 flex gap-1 overflow-x-auto scrollbar-hide">
           {tabs.map(t => (
             <button
               key={t.key}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 active === t.key
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -123,7 +123,7 @@ function App() {
           ))}
         </nav>
       </header>
-      <main className="max-w-7xl mx-auto px-6 py-8 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 min-h-[calc(100vh-120px)]">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 min-h-[calc(100vh-120px)]">
         {!ready && (
           <div className="text-center py-12">
             <div className="inline-block">

@@ -99,4 +99,12 @@ html.dark select:hover {
   border-color: #64748b;
 }
 
+/* Hide scrollbar for nav but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

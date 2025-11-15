@@ -100,48 +100,48 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
   }
 
   return (
-    <div className="grid gap-8">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg p-8">
-        <div className="flex items-center justify-between mb-6">
+    <div className="grid gap-4 sm:gap-8">
+      <div className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg p-4 sm:p-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Add New Task</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Create and manage project tasks</p>
+            <h3 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">Add New Task</h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Create and manage project tasks</p>
           </div>
-          <span className="text-4xl">✨</span>
+          <span className="text-3xl sm:text-4xl flex-shrink-0">✨</span>
         </div>
         {!showForm && (
           <button
-            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-bold hover:shadow-xl hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95 text-lg"
+            className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-lg hover:shadow-xl hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95"
             onClick={() => setShowForm(true)}
           >
             + Add New Task
           </button>
         )}
         {showForm && (
-          <div className="space-y-5 bg-slate-50 dark:bg-slate-700 rounded-xl p-6">
+          <div className="space-y-4 sm:space-y-5 bg-slate-50 dark:bg-slate-700 rounded-lg sm:rounded-xl p-4 sm:p-6">
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Task Title *</label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Task Title *</label>
               <input
-                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all"
+                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all text-sm sm:text-base"
                 placeholder="Enter task title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Phase *</label>
+                <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Phase *</label>
                 <input
-                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all"
+                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all text-sm sm:text-base"
                   placeholder="e.g., Phase 1"
                   value={phase}
                   onChange={(e) => setPhase(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Contractor</label>
+                <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Contractor</label>
                 <input
-                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all"
+                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all text-sm sm:text-base"
                   placeholder="Contractor name"
                   value={contractor}
                   onChange={(e) => setContractor(e.target.value)}
@@ -149,9 +149,9 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status</label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status</label>
               <select
-                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 font-medium transition-all"
+                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 font-medium transition-all text-sm sm:text-base"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
@@ -160,15 +160,15 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
                 <option value="pm_approved">✓ PM Approved</option>
               </select>
             </div>
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2 sm:pt-4">
               <button
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95"
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95"
                 onClick={handleAddTask}
               >
                 {editingId ? 'Update Task' : 'Create Task'}
               </button>
               <button
-                className="flex-1 px-6 py-3 border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-600 transition-all"
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:bg-slate-100 dark:hover:bg-slate-600 transition-all"
                 onClick={handleCancel}
               >
                 Cancel
@@ -178,28 +178,28 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {Object.entries(grouped).map(([phase, list]) => (
-          <div key={phase} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 dark:from-slate-700 to-blue-50 dark:to-slate-700">
-              <h4 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+          <div key={phase} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 dark:from-slate-700 to-blue-50 dark:to-slate-700">
+              <h4 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2 text-sm sm:text-base">
                 <span>📋</span> {phase}
               </h4>
             </div>
             <div className="divide-y divide-slate-200 dark:divide-slate-700">
               {list.map(t => (
-                <div key={t.id} className="p-6 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex-1">
-                      <h5 className="font-semibold text-slate-900 dark:text-white">{t.title || t.id}</h5>
+                <div key={t.id} className="p-4 sm:p-6 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 mb-3 sm:mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base break-words">{t.title || t.id}</h5>
                       <div className="flex gap-2 flex-wrap mt-2">
                         {t.contractor && (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                          <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
                             👤 {t.contractor}
                           </span>
                         )}
                         {t.status && (
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
                             t.status === 'pm_approved' ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' :
                             t.status === 'site_completed' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300' :
                             'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
@@ -211,37 +211,37 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
                       <button
                         onClick={() => handleEdit(t)}
-                        className="px-3 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg font-medium transition-colors"
+                        className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg font-medium transition-colors text-xs sm:text-sm"
                         title="Edit task"
                       >
                         ✏️ Edit
                       </button>
                       <button
                         onClick={() => handleDelete(t.id)}
-                        className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg font-medium transition-colors"
+                        className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg font-medium transition-colors text-xs sm:text-sm"
                         title="Delete task"
                       >
                         🗑️ Delete
                       </button>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {(t.subtasks || []).length === 0 && (
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         {role !== 'portfolio_manager' && (
                           <>
                             <button
-                              className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-100 transition-all"
+                              className="flex-1 px-3 sm:px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                               onClick={() => setTaskStatus(t.id, 'site_completed')}
                             >
                               Mark Site Completed
                             </button>
                             {role === 'project_manager' && (
                               <button
-                                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-100 transition-all"
+                                className="flex-1 px-3 sm:px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                                 onClick={() => setTaskStatus(t.id, 'pm_approved')}
                               >
                                 Approve
@@ -252,19 +252,19 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
                       </div>
                     )}
                     {(t.subtasks || []).length > 0 && (
-                      <div className="space-y-2 bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                      <div className="space-y-2 bg-slate-50 dark:bg-slate-700 rounded-lg p-3 sm:p-4">
                         {(t.subtasks || []).map(s => (
-                          <div key={s.id} className="flex items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 rounded">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-slate-900 dark:text-white">{s.title || s.id}</p>
+                          <div key={s.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white dark:bg-slate-800 p-2 sm:p-3 rounded">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white break-words">{s.title || s.id}</p>
                               <span className="inline-block text-xs px-2 py-1 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded mt-1">
                                 {s.status || 'pending'}
                               </span>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                               {canUpdate(s.status || 'pending', 'site_completed') && (
                                 <button
-                                  className="px-3 py-1 border border-slate-300 text-slate-700 rounded text-xs font-medium hover:bg-slate-100 transition-all"
+                                  className="px-2 sm:px-3 py-1 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                                   onClick={() => setSubStatus(t.id, s.id, 'site_completed')}
                                 >
                                   Complete
@@ -272,7 +272,7 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
                               )}
                               {canUpdate(s.status || 'pending', 'pm_approved') && (
                                 <button
-                                  className="px-3 py-1 border border-slate-300 text-slate-700 rounded text-xs font-medium hover:bg-slate-100 transition-all"
+                                  className="px-2 sm:px-3 py-1 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                                   onClick={() => setSubStatus(t.id, s.id, 'pm_approved')}
                                 >
                                   Approve

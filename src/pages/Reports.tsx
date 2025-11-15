@@ -89,58 +89,58 @@ function Reports({ db, role }: { db: Firestore | null; role: Role }) {
   }
 
   return (
-    <div className="grid gap-8">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg p-8">
-        <div className="flex items-center justify-between mb-6">
+    <div className="grid gap-4 sm:gap-8">
+      <div className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg p-4 sm:p-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Submit Daily Report</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Document site progress with photos and notes</p>
+            <h3 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">Submit Daily Report</h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Document site progress with photos and notes</p>
           </div>
-          <span className="text-4xl">📋</span>
+          <span className="text-3xl sm:text-4xl flex-shrink-0">📋</span>
         </div>
         {!showForm && (
           <button
-            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-bold hover:shadow-xl hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95 text-lg"
+            className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-lg hover:shadow-xl hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95"
             onClick={() => setShowForm(true)}
           >
             + New Report
           </button>
         )}
         {showForm && (
-          <div className="space-y-5 bg-slate-50 dark:bg-slate-700 rounded-xl p-6">
+          <div className="space-y-4 sm:space-y-5 bg-slate-50 dark:bg-slate-700 rounded-lg sm:rounded-xl p-4 sm:p-6">
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Contractor *</label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Contractor *</label>
               <input
-                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all"
+                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all text-sm sm:text-base"
                 placeholder="Contractor name"
                 value={contractor}
                 onChange={(e) => setContractor(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Daily Notes *</label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Daily Notes *</label>
               <textarea
-                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 resize-none placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all"
+                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 resize-none placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all text-sm sm:text-base"
                 placeholder="Daily notes and observations"
                 rows={4}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Materials</label>
+                <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Materials</label>
                 <input
-                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all"
+                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all text-sm sm:text-base"
                   placeholder="Materials used"
                   value={materials}
                   onChange={(e) => setMaterials(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Checklist</label>
+                <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Checklist</label>
                 <input
-                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all"
+                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all text-sm sm:text-base"
                   placeholder="Inspection checklist"
                   value={checklist}
                   onChange={(e) => setChecklist(e.target.value)}
@@ -148,23 +148,23 @@ function Reports({ db, role }: { db: Firestore | null; role: Role }) {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Photo</label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Photo</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={onFile}
-                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-100 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-200 dark:hover:file:bg-blue-800"
+                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all file:mr-2 sm:file:mr-4 file:py-1 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-lg file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-blue-100 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-200 dark:hover:file:bg-blue-800 text-xs sm:text-sm"
               />
             </div>
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2 sm:pt-4">
               <button
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95"
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95"
                 onClick={submit}
               >
                 {editingId ? 'Update Report' : 'Submit Report'}
               </button>
               <button
-                className="flex-1 px-6 py-3 border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-600 transition-all"
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:bg-slate-100 dark:hover:bg-slate-600 transition-all"
                 onClick={handleCancel}
               >
                 Cancel
@@ -174,35 +174,35 @@ function Reports({ db, role }: { db: Firestore | null; role: Role }) {
         )}
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-3xl">📊</span>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recent Reports</h3>
+      <div className="space-y-3 sm:space-y-4">
+        <div className="flex items-center gap-2 mb-4 sm:mb-6">
+          <span className="text-2xl sm:text-3xl">📊</span>
+          <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Recent Reports</h3>
         </div>
         {reports.length === 0 ? (
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center text-slate-500 dark:text-slate-400">
+          <div className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 sm:p-8 text-center text-slate-500 dark:text-slate-400 text-sm sm:text-base">
             No reports yet
           </div>
         ) : (
           reports.map(r => (
-            <div key={r.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 dark:from-slate-700 to-blue-50 dark:to-slate-700 flex items-center justify-between">
-                <h4 className="font-semibold text-slate-900 dark:text-white">{r.contractor || 'Unknown'}</h4>
-                <div className="flex items-center gap-3">
+            <div key={r.id} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 dark:from-slate-700 to-blue-50 dark:to-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
+                <h4 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base">{r.contractor || 'Unknown'}</h4>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                     {r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full sm:w-auto">
                     <button
                       onClick={() => handleEdit(r)}
-                      className="px-3 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg font-medium transition-colors text-sm"
+                      className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg font-medium transition-colors text-xs sm:text-sm"
                       title="Edit report"
                     >
                       ✏️ Edit
                     </button>
                     <button
                       onClick={() => handleDelete(r.id || '')}
-                      className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg font-medium transition-colors text-sm"
+                      className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg font-medium transition-colors text-xs sm:text-sm"
                       title="Delete report"
                     >
                       🗑️ Delete
@@ -210,29 +210,29 @@ function Reports({ db, role }: { db: Firestore | null; role: Role }) {
                   </div>
                 </div>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                 {r.photoBase64 && (
                   <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                    <img src={r.photoBase64} alt="report photo" className="w-full h-64 object-cover" />
+                    <img src={r.photoBase64} alt="report photo" className="w-full h-40 sm:h-64 object-cover" />
                   </div>
                 )}
                 {r.notes && (
                   <div>
                     <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Notes</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">{r.notes}</p>
+                    <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">{r.notes}</p>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {r.materials && (
                     <div>
                       <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Materials</p>
-                      <p className="text-sm text-slate-700 dark:text-slate-300">{r.materials}</p>
+                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">{r.materials}</p>
                     </div>
                   )}
                   {r.checklist && (
                     <div>
                       <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Checklist</p>
-                      <p className="text-sm text-slate-700 dark:text-slate-300">{r.checklist}</p>
+                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">{r.checklist}</p>
                     </div>
                   )}
                 </div>
