@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Tasks from './pages/Tasks'
 import Budget from './pages/Budget'
 import Reports from './pages/Reports'
+import DailyReports from './pages/DailyReports'
 import Contractors from './pages/Contractors'
 import Media from './pages/Media'
 import AskGemini from './pages/AskGemini'
@@ -62,7 +63,7 @@ const tabs = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'tasks', label: 'Tasks' },
   { key: 'budget', label: 'Budget & Draws' },
-  { key: 'reports', label: 'Daily Reports' },
+  { key: 'daily-reports', label: 'Daily Reports' },
   { key: 'contractors', label: 'Contractors' },
   { key: 'media', label: 'Pictures & Videos' },
   { key: 'ask', label: 'Ask Gemini' },
@@ -190,7 +191,7 @@ function App() {
             {firebaseEnabled && active === 'dashboard' && <Dashboard db={db} role={role} />}
             {firebaseEnabled && active === 'tasks' && <Tasks db={db} role={role} />}
             {firebaseEnabled && active === 'budget' && <Budget db={db} role={role} />}
-            {firebaseEnabled && active === 'reports' && <Reports db={db} role={role} />}
+            {firebaseEnabled && active === 'daily-reports' && <DailyReports db={db} role={role} />}
             {firebaseEnabled && active === 'contractors' && <Contractors db={db} />}
             {firebaseEnabled && active === 'media' && <Media db={db} />}
             {active === 'ask' && <AskGemini db={db} role={role} />}
