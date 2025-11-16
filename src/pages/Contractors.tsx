@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Firestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 
-type Contractor = { id: string; name?: string; phase?: string; phone?: string; email?: string }
+type Contractor = { id: string; name?: string; description?: string; phase?: string; phone?: string; email?: string; status?: string }
 type Task = { id: string; contractor?: string; status?: string }
 
 function Contractors({ db }: { db: Firestore | null }) {
@@ -10,6 +10,7 @@ function Contractors({ db }: { db: Firestore | null }) {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
   const [phase, setPhase] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -51,6 +52,7 @@ function Contractors({ db }: { db: Firestore | null }) {
     if (editingId) {
       await updateDoc(doc(db, 'contractors', editingId), {
         name,
+        description,
         phase,
         phone,
         email
@@ -59,12 +61,15 @@ function Contractors({ db }: { db: Firestore | null }) {
     } else {
       await addDoc(collection(db, 'contractors'), {
         name,
+        description,
         phase,
         phone,
-        email
+        email,
+        status: 'active'
       })
     }
     setName('')
+    setDescription('')
     setPhase('')
     setPhone('')
     setEmail('')
@@ -73,6 +78,7 @@ function Contractors({ db }: { db: Firestore | null }) {
 
   const handleEdit = (contractor: Contractor) => {
     setName(contractor.name || '')
+    setDescription(contractor.description || '')
     setPhase(contractor.phase || '')
     setPhone(contractor.phone || '')
     setEmail(contractor.email || '')
@@ -89,6 +95,7 @@ function Contractors({ db }: { db: Firestore | null }) {
     setShowForm(false)
     setEditingId(null)
     setName('')
+    setDescription('')
     setPhase('')
     setPhone('')
     setEmail('')
@@ -121,6 +128,16 @@ function Contractors({ db }: { db: Firestore | null }) {
                 placeholder="Contractor name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Description</label>
+              <textarea
+                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-30 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-400 font-medium transition-all text-sm sm:text-base"
+                placeholder="Brief description of contractor services"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
@@ -187,6 +204,7 @@ function Contractors({ db }: { db: Firestore | null }) {
                   <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
                     <div className="flex-1 min-w-0">
                       <h5 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base break-words">{c.name || c.id}</h5>
+                      {c.description && <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">{c.description}</p>}
                       <div className="flex flex-col gap-1 mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                         {c.phone && <span>📱 {c.phone}</span>}
                         {c.email && <span>📧 {c.email}</span>}

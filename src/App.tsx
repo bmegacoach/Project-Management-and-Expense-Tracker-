@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { initializeApp } from 'firebase/app'
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore'
+import { getFirestore, enableIndexedDbPersistence, collection, doc, getDoc, setDoc, getDocs, addDoc } from 'firebase/firestore'
 import { useTheme } from './ThemeContext'
 import Dashboard from './pages/Dashboard'
 import Tasks from './pages/Tasks'
@@ -13,6 +13,50 @@ import AskGemini from './pages/AskGemini'
 import GeminiPro from './pages/GeminiPro'
 
 type Role = 'site_manager' | 'project_manager' | 'portfolio_manager'
+
+// PRD Constants and Initialization
+const PRD_DATA = {
+  PROJECT_WORK_VALUE: 110000,
+  TOTAL_SCHEDULED_DRAWS: 127400,
+  MONTHLY_INTEREST: 2900,
+  PROJECT_DURATION_MONTHS: 6,
+  PROPERTY_ADDRESS: '4821 Briscoe St & 4829 Briscoe St, Houston, TX 77033',
+  PROJECT_NAME: 'RED CARPET CONTRACTORS Project: Tech Camp 1'
+}
+
+const DRAW_SCHEDULE = [
+  { drawNumber: 1, taskAllocation: 0.40, interestMonths: 2, amount: 49800 },
+  { drawNumber: 2, taskAllocation: 0.35, interestMonths: 1.33, amount: 29466.67 },
+  { drawNumber: 3, taskAllocation: 0.25, interestMonths: 1.33, amount: 24966.67 },
+  { drawNumber: 4, taskAllocation: 1.0, interestMonths: 1.33, amount: 23166.66 }
+]
+
+// Initialize PRD data in Firestore
+const initializePRDData = async (db: any) => {
+  if (!db) return
+
+  try {
+    // Set PRD constants
+    const prdRef = doc(db, 'config', 'prd')
+    const prdSnap = await getDoc(prdRef)
+    if (!prdSnap.exists()) {
+      await setDoc(prdRef, PRD_DATA)
+    }
+
+    // Initialize draw schedule
+    const drawsSnap = await getDocs(collection(db, 'draws'))
+    if (drawsSnap.empty) {
+      for (const draw of DRAW_SCHEDULE) {
+        await addDoc(collection(db, 'draws'), {
+          ...draw,
+          status: 'not_scheduled'
+        })
+      }
+    }
+  } catch (error) {
+    console.error('Error initializing PRD data:', error)
+  }
+}
 
 const tabs = [
   { key: 'dashboard', label: 'Dashboard' },
@@ -53,7 +97,10 @@ function App() {
     } else {
       setReady(true)
     }
-    if (db) enableIndexedDbPersistence(db).catch(() => {})
+    if (db) {
+      enableIndexedDbPersistence(db).catch(() => {})
+      initializePRDData(db)
+    }
     const handler = () => setOnline(navigator.onLine)
     handler()
     window.addEventListener('online', handler)

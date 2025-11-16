@@ -1,0 +1,337 @@
+{
+  "tasks": [
+    {
+      "id": "task-1",
+      "name": "Permit Finalization",
+      "phase": "Phase 1: Pre-Construction & Demolition",
+      "isNonDependency": false,
+      "lineItem": "Permits",
+      "contractor": "Demolition Crew",
+      "subTasks": [
+        { "id": "1-1", "name": "Confirm rehab permit amendment", "status": "pending" },
+        { "id": "1-2", "name": "Schedule & pass pre-demo inspection", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-2",
+      "name": "Mobile Home Setup",
+      "phase": "Phase 1: Pre-Construction & Demolition",
+      "isNonDependency": true,
+      "lineItem": "Site Preparation",
+      "contractor": "Demolition Crew",
+      "subTasks": [
+        { "id": "2-1", "name": "Acquire mobile home", "status": "pending" },
+        { "id": "2-2", "name": "Place and level mobile home", "status": "pending" },
+        { "id": "2-3", "name": "Run temporary water & power to home", "status": "pending" },
+        { "id": "2-4", "name": "Install 4 bunk beds", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-3",
+      "name": "Site Security System Installation",
+      "phase": "Phase 1: Pre-Construction & Demolition",
+      "isNonDependency": false,
+      "lineItem": "Security",
+      "contractor": "MEP Specialists",
+      "subTasks": [
+        { "id": "3-1", "name": "Install perimeter cameras", "status": "pending" },
+        { "id": "3-2", "name": "Activate monitoring service", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-4",
+      "name": "Site Logistics (Container/Dumpster)",
+      "phase": "Phase 1: Pre-Construction & Demolition",
+      "isNonDependency": false,
+      "lineItem": "Site Preparation",
+      "contractor": "Demolition Crew",
+      "subTasks": [
+        { "id": "4-1", "name": "Rent & place half container (secured storage)", "status": "pending" },
+        { "id": "4-2", "name": "Place roll-off dumpster (Phase 1/2 debris)", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-5",
+      "name": "Selective Demolition (\"Micro Demo\")",
+      "phase": "Phase 1: Pre-Construction & Demolition",
+      "isNonDependency": false,
+      "lineItem": "Demolition",
+      "contractor": "Demolition Crew",
+      "subTasks": [
+        { "id": "5-1", "name": "Demo existing roof (selective)", "status": "pending" },
+        { "id": "5-2", "name": "Demo interior walls per new layout", "status": "pending" },
+        { "id": "5-3", "name": "Demo 3 exterior walls for relocation", "status": "pending" },
+        { "id": "5-4", "name": "Remove all old mechanical (HVAC, water heater)", "status": "pending" },
+        { "id": "5-5", "name": "Remove all old fixtures, flooring, non-structural", "status": "pending" },
+        { "id": "5-6", "name": "Clear & manage debris", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-6",
+      "name": "Foundation Repair & Addition",
+      "phase": "Phase 2: Structural & Envelope",
+      "isNonDependency": false,
+      "lineItem": "Foundation/Footing/Slab",
+      "contractor": "Foundation & Framing Team",
+      "subTasks": [
+        { "id": "6-1", "name": "Repair/prep current foundation", "status": "pending" },
+        { "id": "6-2", "name": "Form & pour 1000 sq ft addition slab", "status": "pending" },
+        { "id": "6-3", "name": "Integrate new and existing foundations", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-7",
+      "name": "Framing (11ft Ceilings)",
+      "phase": "Phase 2: Structural & Envelope",
+      "isNonDependency": false,
+      "lineItem": "Framing Labor - Installation",
+      "contractor": "Foundation & Framing Team",
+      "subTasks": [
+        { "id": "7-1", "name": "Frame 1000 sq ft addition walls", "status": "pending" },
+        { "id": "7-2", "name": "Re-frame 3 relocated exterior walls", "status": "pending" },
+        { "id": "7-3", "name": "Frame all new interior partitions (12 bed / 2 bath)", "status": "pending" },
+        { "id": "7-4", "name": "Frame for 11-foot ceiling height throughout", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-8",
+      "name": "Roofing Installation (Light Asphalt)",
+      "phase": "Phase 2: Structural & Envelope",
+      "isNonDependency": false,
+      "lineItem": "Roofing",
+      "contractor": "Exterior & Envelope Crew",
+      "subTasks": [
+        { "id": "8-1", "name": "Install new roof trusses/rafters", "status": "pending" },
+        { "id": "8-2", "name": "Install decking/sheathing", "status": "pending" },
+        { "id": "8-3", "name": "Install underlayment & light-colored shingles", "status": "pending" },
+        { "id": "8-4", "name": "Install new gutters & downspouts", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-9",
+      "name": "Window & Exterior Door Installation",
+      "phase": "Phase 2: Structural & Envelope",
+      "isNonDependency": false,
+      "lineItem": "Windows/Sliders",
+      "contractor": "Exterior & Envelope Crew",
+      "subTasks": [
+        { "id": "9-1", "name": "Install all new energy-efficient windows", "status": "pending" },
+        { "id": "9-2", "name": "Install all exterior doors", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-10",
+      "name": "Exterior Sheathing & Weather Barrier",
+      "phase": "Phase 2: Structural & Envelope",
+      "isNonDependency": false,
+      "lineItem": "Siding/Masonry/Stucco",
+      "contractor": "Exterior & Envelope Crew",
+      "subTasks": [
+        { "id": "10-1", "name": "Install sheathing on new/modified walls", "status": "pending" },
+        { "id": "10-2", "name": "Apply weather-resistant barrier (WRB)", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-11",
+      "name": "Procure/Deliver Hardi Plank Siding",
+      "phase": "Phase 2: Structural & Envelope",
+      "isNonDependency": true,
+      "lineItem": "Siding/Masonry/Stucco",
+      "contractor": "Exterior & Envelope Crew",
+      "subTasks": [
+        { "id": "11-1", "name": "Confirm order quantity", "status": "pending" },
+        { "id": "11-2", "name": "Schedule & receive delivery in secured container", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-14",
+      "name": "HVAC Rough-in",
+      "phase": "Phase 3: MEP Rough-in",
+      "isNonDependency": false,
+      "lineItem": "HVAC",
+      "contractor": "MEP Specialists",
+      "subTasks": [
+        { "id": "14-1", "name": "Install new ductwork", "status": "pending" },
+        { "id": "14-2", "name": "Install refrigerant lines & condensate drains", "status": "pending" },
+        { "id": "14-3", "name": "Set indoor/outdoor units", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-15",
+      "name": "Plumbing Rough-in",
+      "phase": "Phase 3: MEP Rough-in",
+      "isNonDependency": false,
+      "lineItem": "Plumbing - Rough",
+      "contractor": "MEP Specialists",
+      "subTasks": [
+        { "id": "15-1", "name": "Install new water supply lines (PEX/Copper)", "status": "pending" },
+        { "id": "15-2", "name": "Install new drain-waste-vent (DWV) systems", "status": "pending" },
+        { "id": "15-3", "name": "Rough-in for multi-stall bathrooms", "status": "pending" },
+        { "id": "15-4", "name": "Install new water heater(s)", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-16",
+      "name": "Electrical Rough-in",
+      "phase": "Phase 3: MEP Rough-in",
+      "isNonDependency": false,
+      "lineItem": "Electrical - Rough",
+      "contractor": "MEP Specialists",
+      "subTasks": [
+        { "id": "16-1", "name": "Install new electrical panel & service", "status": "pending" },
+        { "id": "16-2", "name": "Run new wiring (Romex) for all circuits", "status": "pending" },
+        { "id": "16-3", "name": "Install outlet, switch, & lighting boxes", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-17",
+      "name": "Insulation Installation",
+      "phase": "Phase 3: MEP Rough-in",
+      "isNonDependency": false,
+      "lineItem": "Insulation",
+      "contractor": "Interior Finishing Team",
+      "subTasks": [
+        { "id": "17-1", "name": "Insulate exterior walls", "status": "pending" },
+        { "id": "17-2", "name": "Insulate ceilings/attic", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-18",
+      "name": "MEP Rough-in Inspections",
+      "phase": "Phase 3: MEP Rough-in",
+      "isNonDependency": false,
+      "lineItem": "Permits",
+      "contractor": "MEP Specialists",
+      "subTasks": [
+        { "id": "18-1", "name": "Pass structural/framing inspection", "status": "pending" },
+        { "id": "18-2", "name": "Pass electrical rough-in inspection", "status": "pending" },
+        { "id": "18-3", "name": "Pass plumbing rough-in inspection", "status": "pending" },
+        { "id": "18-4", "name": "Pass HVAC rough-in inspection", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-22",
+      "name": "Drywall Installation",
+      "phase": "Phase 4: Interior Finishes & Exterior Cladding",
+      "isNonDependency": false,
+      "lineItem": "Drywall/Tape/Texture",
+      "contractor": "Interior Finishing Team",
+      "subTasks": [
+        { "id": "22-1", "name": "Hang drywall (all walls & 11ft ceilings)", "status": "pending" },
+        { "id": "22-2", "name": "Tape, mud, & sand to Level 4/5 finish", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-23",
+      "name": "Interior Painting",
+      "phase": "Phase 4: Interior Finishes & Exterior Cladding",
+      "isNonDependency": false,
+      "lineItem": "Interior Painting",
+      "contractor": "Interior Finishing Team",
+      "subTasks": [
+        { "id": "23-1", "name": "Prime all new drywall", "status": "pending" },
+        { "id": "23-2", "name": "Paint ceilings", "status": "pending" },
+        { "id": "23-3", "name": "Paint walls (durable, low-VOC)", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-24",
+      "name": "Flooring Installation (Concrete & LVT)",
+      "phase": "Phase 4: Interior Finishes & Exterior Cladding",
+      "isNonDependency": false,
+      "lineItem": "Flooring (Concrete/LVT)",
+      "contractor": "Interior Finishing Team",
+      "subTasks": [
+        { "id": "24-1", "name": "Polish & stain concrete floors (common areas)", "status": "pending" },
+        { "id": "24-2", "name": "Install LVT flooring in baths & kitchen", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-25",
+      "name": "Cabinetry & Countertops",
+      "phase": "Phase 4: Interior Finishes & Exterior Cladding",
+      "isNonDependency": false,
+      "lineItem": "Cabinets",
+      "contractor": "Interior Finishing Team",
+      "subTasks": [
+        { "id": "25-1", "name": "Install kitchen cabinetry", "status": "pending" },
+        { "id": "25-2", "name": "Install bathroom vanities & countertops", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-26",
+      "name": "Interior Doors & Trim",
+      "phase": "Phase 4: Interior Finishes & Exterior Cladding",
+      "isNonDependency": false,
+      "lineItem": "Int Doors/Trim/Millwork",
+      "contractor": "Interior Finishing Team",
+      "subTasks": [
+        { "id": "26-1", "name": "Install all interior doors & hardware", "status": "pending" },
+        { "id": "26-2", "name": "Install baseboards & all trim", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-27",
+      "name": "Exterior Siding (Hardi Plank)",
+      "phase": "Phase 4: Interior Finishes & Exterior Cladding",
+      "isNonDependency": false,
+      "lineItem": "Siding/Masonry/Stucco",
+      "contractor": "Exterior & Envelope Crew",
+      "subTasks": [
+        { "id": "27-1", "name": "Install Hardi Plank siding", "status": "pending" },
+        { "id": "27-2", "name": "Caulk, prep, & paint exterior siding", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-32",
+      "name": "Finish Electrical",
+      "phase": "Phase 5: Fixtures, Appliances & Final Touches",
+      "isNonDependency": false,
+      "lineItem": "Electrical - Finish",
+      "contractor": "MEP Specialists",
+      "subTasks": [
+        { "id": "32-1", "name": "Install light fixtures & ceiling fans", "status": "pending" },
+        { "id": "32-2", "name": "Install outlets, switches, & cover plates", "status": "pending" },
+        { "id": "32-3", "name": "Install all appliances", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-33",
+      "name": "Finish Plumbing",
+      "phase": "Phase 5: Fixtures, Appliances & Final Touches",
+      "isNonDependency": false,
+      "lineItem": "Plumbing - Finish",
+      "contractor": "MEP Specialists",
+      "subTasks": [
+        { "id": "33-1", "name": "Install toilets, sinks, & faucets (multi-stall)", "status": "pending" },
+        { "id": "33-2", "name": "Install shower fixtures", "status": "pending" },
+        { "id": "33-3", "name": "Install all finish hardware", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-34",
+      "name": "Final Cleaning",
+      "phase": "Phase 5: Fixtures, Appliances & Final Touches",
+      "isNonDependency": false,
+      "lineItem": "Final Clean-Up",
+      "contractor": "Interior Finishing Team",
+      "subTasks": [
+        { "id": "34-1", "name": "Thorough interior & exterior cleaning", "status": "pending" },
+        { "id": "34-2", "name": "Window cleaning", "status": "pending" }
+      ]
+    },
+    {
+      "id": "task-37",
+      "name": "Final Inspections & CO",
+      "phase": "Phase 5: Fixtures, Appliances & Final Touches",
+      "isNonDependency": false,
+      "lineItem": "Permits",
+      "contractor": "Foundation & Framing Team",
+      "subTasks": [
+        { "id": "37-1", "name": "Final walk-through with Project Manager", "status": "pending" },
+        { "id": "37-2", "name": "Schedule & pass final building inspection", "status": "pending" },
+        { "id": "37-3", "name": "Obtain Certificate of Occupancy (CO)", "status": "pending" }
+      ]
+    }
+  ]
+}
