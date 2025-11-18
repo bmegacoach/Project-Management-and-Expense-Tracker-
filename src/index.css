@@ -7,25 +7,25 @@
 html, body, #root { 
   height: 100%;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color-scheme: dark;
 }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #0f172a;
+  color: #f1f5f9;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-html.dark {
-  color-scheme: dark;
+html {
   background-color: #0f172a;
 }
 
-html.dark body {
+html body {
   background-color: #0f172a;
   color: #f1f5f9;
 }
 
-/* Modern input styling */
+/* Modern input styling - Dark mode only */
 input[type="text"],
 input[type="number"],
 input[type="email"],
@@ -33,27 +33,15 @@ input[type="date"],
 input[type="file"],
 textarea,
 select {
-  background-color: white;
-  border: 2px solid #e2e8f0;
-  color: #0f172a;
+  background-color: #1e293b;
+  border: 2px solid #475569;
+  color: #f1f5f9;
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
   font-size: 1rem;
   font-weight: 500;
-  placeholder-color: #a1acb8;
+  placeholder-color: #64748b;
   transition: all 0.2s ease;
-}
-
-html.dark input[type="text"],
-html.dark input[type="number"],
-html.dark input[type="email"],
-html.dark input[type="date"],
-html.dark input[type="file"],
-html.dark textarea,
-html.dark select {
-  background-color: #1e293b;
-  border-color: #475569;
-  color: white;
 }
 
 input[type="text"]:focus,
@@ -65,17 +53,6 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-html.dark input[type="text"]:focus,
-html.dark input[type="number"]:focus,
-html.dark input[type="email"]:focus,
-html.dark input[type="date"]:focus,
-html.dark input[type="file"]:focus,
-html.dark textarea:focus,
-html.dark select:focus {
-  border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
@@ -86,16 +63,6 @@ input[type="date"]:hover,
 input[type="file"]:hover,
 textarea:hover,
 select:hover {
-  border-color: #cbd5e1;
-}
-
-html.dark input[type="text"]:hover,
-html.dark input[type="number"]:hover,
-html.dark input[type="email"]:hover,
-html.dark input[type="date"]:hover,
-html.dark input[type="file"]:hover,
-html.dark textarea:hover,
-html.dark select:hover {
   border-color: #64748b;
 }
 

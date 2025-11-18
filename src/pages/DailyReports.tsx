@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Firestore, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from 'firebase/firestore'
+import { Firestore, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore'
 
 type Role = 'site_manager' | 'project_manager' | 'portfolio_manager'
 
@@ -7,6 +7,12 @@ type InspectionRow = {
   location: string
   condition: string
   action: string
+}
+
+type EditHistoryEntry = {
+  editedAt: string
+  editedBy: string
+  changes: Record<string, string>
 }
 
 type DailyReport = {
@@ -34,11 +40,19 @@ type DailyReport = {
   photos: { name: string; url: string; timestamp: string }[]
   
   createdAt?: string
+  updatedAt?: string
   submittedBy?: string
+  isDraft?: boolean
+  approvalStatus?: 'draft' | 'submitted' | 'approved' | 'rejected'
+  approvedBy?: string
+  approvedAt?: string
+  rejectionReason?: string
+  editHistory?: EditHistoryEntry[]
 }
 
 function DailyReports({ db, role }: { db: Firestore | null; role: Role }) {
   const [tab, setTab] = useState<'submit' | 'view'>('submit')
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [report, setReport] = useState<DailyReport>({
     dateOfReport: new Date().toISOString().split('T')[0],
     hoursWorked: 8,
@@ -60,13 +74,16 @@ function DailyReports({ db, role }: { db: Firestore | null; role: Role }) {
     lumberList: '',
     plumbingList: '',
     electricalList: '',
-    photos: []
+    photos: [],
+    isDraft: true,
+    approvalStatus: 'draft'
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [photoInput, setPhotoInput] = useState<File | null>(null)
   const [savedReports, setSavedReports] = useState<(DailyReport & { id: string })[]>([])
   const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Load saved reports on mount or tab change
   useEffect(() => {
@@ -141,6 +158,60 @@ function DailyReports({ db, role }: { db: Firestore | null; role: Role }) {
     }))
   }
 
+  const startEdit = (reportToEdit: DailyReport & { id: string }) => {
+    setEditingId(reportToEdit.id)
+    setReport(reportToEdit)
+    setTab('submit')
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    resetForm()
+  }
+
+  const resetForm = () => {
+    setReport({
+      dateOfReport: new Date().toISOString().split('T')[0],
+      hoursWorked: 8,
+      scopeOfWork: '',
+      generalNotes: '',
+      observations: '',
+      locationFocus: '',
+      nextSteps: '',
+      inspections: [
+        { location: 'Foundation/Footing (E.g., Rear exterior slab)', condition: '', action: '' },
+        { location: 'Load-Bearing Walls/Framing (E.g., 2x4s near HVAC unit)', condition: '', action: '' },
+        { location: 'Non-Load Bearing (E.g., Hallway partition)', condition: '', action: '' },
+        { location: 'Ceiling Joists/Rafters (E.g., Above Room #6)', condition: '', action: '' },
+        { location: 'Plumbing/Water Lines (E.g., Shower in front of house)', condition: '', action: '' },
+        { location: 'Electrical Wiring (E.g., Wiring in demoed walls)', condition: '', action: '' },
+        { location: 'Pest Damage (Termites/Other)', condition: '', action: '' }
+      ],
+      salvageMaterials: '',
+      lumberList: '',
+      plumbingList: '',
+      electricalList: '',
+      photos: [],
+      isDraft: true,
+      approvalStatus: 'draft'
+    })
+    setPhotoInput(null)
+  }
+
+  const deleteReport = async (reportId: string) => {
+    if (!db) return
+    if (!window.confirm('Are you sure you want to delete this report?')) return
+
+    try {
+      await deleteDoc(doc(db, 'dailyReports', reportId))
+      setMessage({ type: 'success', text: 'Report deleted successfully' })
+      loadReports()
+    } catch (error) {
+      console.error('Error deleting report:', error)
+      setMessage({ type: 'error', text: 'Failed to delete report' })
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -151,41 +222,77 @@ function DailyReports({ db, role }: { db: Firestore | null; role: Role }) {
 
     setIsSubmitting(true)
     try {
-      await addDoc(collection(db, 'dailyReports'), {
-        ...report,
-        createdAt: new Date().toISOString(),
-        submittedBy: role,
-        timestamp: serverTimestamp()
-      })
-
-      alert('Daily report submitted successfully!')
+      if (editingId) {
+        // Update existing report
+        const reportRef = doc(db, 'dailyReports', editingId)
+        await updateDoc(reportRef, {
+          ...report,
+          updatedAt: new Date().toISOString(),
+          approvalStatus: 'submitted'
+        })
+        setMessage({ type: 'success', text: 'Daily report updated and submitted for approval!' })
+        setEditingId(null)
+      } else {
+        // Create new report
+        await addDoc(collection(db, 'dailyReports'), {
+          ...report,
+          createdAt: new Date().toISOString(),
+          submittedBy: role,
+          isDraft: false,
+          approvalStatus: 'submitted',
+          timestamp: serverTimestamp()
+        })
+        setMessage({ type: 'success', text: 'Daily report submitted successfully!' })
+      }
+      
       // Reset form
-      setReport({
-        dateOfReport: new Date().toISOString().split('T')[0],
-        hoursWorked: 8,
-        scopeOfWork: '',
-        generalNotes: '',
-        observations: '',
-        locationFocus: '',
-        nextSteps: '',
-        inspections: [
-          { location: 'Foundation/Footing (E.g., Rear exterior slab)', condition: '', action: '' },
-          { location: 'Load-Bearing Walls/Framing (E.g., 2x4s near HVAC unit)', condition: '', action: '' },
-          { location: 'Non-Load Bearing (E.g., Hallway partition)', condition: '', action: '' },
-          { location: 'Ceiling Joists/Rafters (E.g., Above Room #6)', condition: '', action: '' },
-          { location: 'Plumbing/Water Lines (E.g., Shower in front of house)', condition: '', action: '' },
-          { location: 'Electrical Wiring (E.g., Wiring in demoed walls)', condition: '', action: '' },
-          { location: 'Pest Damage (Termites/Other)', condition: '', action: '' }
-        ],
-        salvageMaterials: '',
-        lumberList: '',
-        plumbingList: '',
-        electricalList: '',
-        photos: []
-      })
+      resetForm()
+      // Reload reports if on view tab
+      if (tab === 'view') {
+        loadReports()
+      }
     } catch (error) {
       console.error('Error submitting report:', error)
-      alert('Failed to submit report. Please try again.')
+      setMessage({ type: 'error', text: 'Failed to submit report. Please try again.' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const saveDraft = async () => {
+    if (!db) {
+      alert('Database connection failed')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      if (editingId) {
+        // Update draft
+        const reportRef = doc(db, 'dailyReports', editingId)
+        await updateDoc(reportRef, {
+          ...report,
+          isDraft: true,
+          approvalStatus: 'draft',
+          updatedAt: new Date().toISOString()
+        })
+        setMessage({ type: 'success', text: 'Draft saved successfully!' })
+      } else {
+        // Create new draft
+        const newReportRef = await addDoc(collection(db, 'dailyReports'), {
+          ...report,
+          isDraft: true,
+          approvalStatus: 'draft',
+          createdAt: new Date().toISOString(),
+          submittedBy: role,
+          timestamp: serverTimestamp()
+        })
+        setEditingId(newReportRef.id)
+        setMessage({ type: 'success', text: 'Draft saved successfully! You can continue editing.' })
+      }
+    } catch (error) {
+      console.error('Error saving draft:', error)
+      setMessage({ type: 'error', text: 'Failed to save draft. Please try again.' })
     } finally {
       setIsSubmitting(false)
     }
@@ -219,7 +326,7 @@ function DailyReports({ db, role }: { db: Firestore | null; role: Role }) {
                 : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            ✏️ Submit New Report
+            ✏️ {editingId ? 'Edit Report' : 'Submit New Report'}
           </button>
           <button
             onClick={() => setTab('view')}
@@ -232,6 +339,23 @@ function DailyReports({ db, role }: { db: Firestore | null; role: Role }) {
             📊 View Reports by Date
           </button>
         </div>
+
+        {/* Message Display */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg border-2 ${
+            message.type === 'success'
+              ? 'bg-green-100 dark:bg-green-900 border-green-300 dark:border-green-700'
+              : 'bg-red-100 dark:bg-red-900 border-red-300 dark:border-red-700'
+          }`}>
+            <p className={`${
+              message.type === 'success'
+                ? 'text-green-700 dark:text-green-300'
+                : 'text-red-700 dark:text-red-300'
+            } font-semibold`}>
+              {message.type === 'success' ? '✓' : '✕'} {message.text}
+            </p>
+          </div>
+        )}
 
         {/* Submit Tab */}
         {tab === 'submit' && (
@@ -463,14 +587,32 @@ function DailyReports({ db, role }: { db: Firestore | null; role: Role }) {
           </div>
 
           {/* Submit Button */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="submit"
               disabled={isSubmitting || !db}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg font-bold text-sm sm:text-base transition-all"
             >
-              {isSubmitting ? '⏳ Submitting...' : '✓ Submit Daily Report'}
+              {isSubmitting ? '⏳ ' : '✓ '} {editingId ? 'Update & Submit' : 'Submit Daily Report'}
             </button>
+            <button
+              type="button"
+              onClick={saveDraft}
+              disabled={isSubmitting || !db}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg font-bold text-sm sm:text-base transition-all"
+            >
+              {isSubmitting ? '⏳' : '💾'} Save as Draft
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={cancelEdit}
+                disabled={isSubmitting}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg font-bold text-sm sm:text-base transition-all"
+              >
+                ✕ Cancel Edit
+              </button>
+            )}
           </div>
           </form>
         )}
@@ -494,12 +636,41 @@ function DailyReports({ db, role }: { db: Firestore | null; role: Role }) {
               <div className="space-y-4">
                 {savedReports.map((savedReport) => (
                   <details key={savedReport.id} className="bg-slate-50 dark:bg-slate-700 rounded-lg border-2 border-slate-200 dark:border-slate-600 p-4 sm:p-6 cursor-pointer group">
-                    <summary className="flex items-center justify-between font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <summary className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       <span>📅 {savedReport.dateOfReport} - {savedReport.hoursWorked}h - {savedReport.locationFocus || 'No location specified'}</span>
-                      <span className="text-slate-500 group-open:rotate-180 transition-transform">▼</span>
+                      <div className="flex gap-2 items-center">
+                        {savedReport.isDraft && (
+                          <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 text-xs font-bold rounded">📝 DRAFT</span>
+                        )}
+                        {savedReport.approvalStatus === 'submitted' && (
+                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-bold rounded">⏳ SUBMITTED</span>
+                        )}
+                        {savedReport.approvalStatus === 'approved' && (
+                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-bold rounded">✓ APPROVED</span>
+                        )}
+                        <span className="text-slate-500 group-open:rotate-180 transition-transform">▼</span>
+                      </div>
                     </summary>
 
                     <div className="mt-6 space-y-6">
+                      {/* Edit/Delete Actions */}
+                      {savedReport.isDraft || savedReport.approvalStatus !== 'approved' ? (
+                        <div className="flex gap-2 mb-4">
+                          <button
+                            onClick={() => startEdit(savedReport)}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold text-sm transition-all"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => deleteReport(savedReport.id!)}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-bold text-sm transition-all"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      ) : null}
+
                       {/* Section 1 Summary */}
                       <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-4 border-l-4 border-blue-500">
                         <h4 className="font-bold text-blue-900 dark:text-blue-100 mb-3">📌 Daily Progress Summary</h4>
