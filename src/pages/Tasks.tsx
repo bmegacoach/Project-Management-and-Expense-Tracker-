@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Firestore, collection, doc, onSnapshot, updateDoc, addDoc, deleteDoc, writeBatch } from 'firebase/firestore'
+import { Firestore, collection, doc, onSnapshot, updateDoc, addDoc, deleteDoc, writeBatch, setDoc } from 'firebase/firestore'
 
 type Role = 'site_manager' | 'project_manager' | 'portfolio_manager'
 
@@ -28,6 +28,13 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
   const [editingTask, setEditingTask] = useState<{ phaseId: string; taskId: string; isDependency: boolean } | null>(null)
   const [formData, setFormData] = useState({ name: '', contractor: '', lineItem: '', isDependency: false })
   const [selectedPhase, setSelectedPhase] = useState('')
+  
+  // Subtask states
+  const [showSubtaskForm, setShowSubtaskForm] = useState<{ phaseId: string; taskId: string; isDependency: boolean } | null>(null)
+  const [subtaskFormData, setSubtaskFormData] = useState({ name: '' })
+  const [editingSubtask, setEditingSubtask] = useState<{ phaseId: string; taskId: string; subtaskId: string; isDependency: boolean } | null>(null)
+  // Inline subtasks inside the task creation/edit form
+  const [formSubtasks, setFormSubtasks] = useState<Array<{ id?: string; name: string; status?: string }>>([])
 
   const PHASE_IDS = [
     'phase-1-pre-construction-demolition',
@@ -126,8 +133,8 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
     const phaseRef = doc(db, 'phases', selectedPhase)
     const collectionName = formData.isDependency ? 'dependentTasks' : 'nonDependentTasks'
 
+    // If editing an existing task, update it and upsert subtasks
     if (editingTask && editingTask.phaseId === selectedPhase) {
-      // Update existing task
       const taskRef = doc(phaseRef, collectionName, editingTask.taskId)
       await updateDoc(taskRef, {
         name: formData.name,
@@ -135,11 +142,46 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
         lineItem: formData.lineItem,
         updatedAt: new Date().toISOString()
       })
+
+      // Upsert subtasks: if id exists -> update, else create
+      for (const s of formSubtasks) {
+        if (s.id) {
+          await updateDoc(doc(taskRef, 'subtasks', s.id), {
+            name: s.name,
+            updatedAt: new Date().toISOString()
+          }).catch(() => {
+            // If update fails (missing doc), create it
+            addDoc(collection(taskRef, 'subtasks'), {
+              name: s.name,
+              status: s.status || 'pending',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            })
+          })
+        } else {
+          const subId = s.name.toLowerCase().replace(/\s+/g, '-').substring(0, 50)
+          const subRef = doc(taskRef, 'subtasks', subId)
+          await setDoc(subRef, {
+            name: s.name,
+            status: s.status || 'pending',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }).catch(async () => {
+            await addDoc(collection(taskRef, 'subtasks'), {
+              name: s.name,
+              status: s.status || 'pending',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            })
+          })
+        }
+      }
+
     } else {
-      // Create new task
+      // Create new task with a deterministic id (sanitized name)
       const sanitizedId = formData.name.toLowerCase().replace(/\s+/g, '-').substring(0, 50)
       const taskRef = doc(phaseRef, collectionName, sanitizedId)
-      await updateDoc(taskRef, {
+      await setDoc(taskRef, {
         name: formData.name,
         contractor: formData.contractor,
         lineItem: formData.lineItem,
@@ -147,8 +189,9 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
         status: 'pending',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      }).catch(() => {
-        addDoc(collection(phaseRef, collectionName), {
+      }).catch(async () => {
+        // fallback to auto-id create
+        const newTaskRef = await addDoc(collection(phaseRef, collectionName), {
           name: formData.name,
           contractor: formData.contractor,
           lineItem: formData.lineItem,
@@ -157,7 +200,37 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         })
+        // create subtasks under the newly created task
+        for (const s of formSubtasks) {
+          await addDoc(collection(newTaskRef, 'subtasks'), {
+            name: s.name,
+            status: s.status || 'pending',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })
+        }
+        resetForm()
+        return
       })
+
+      // If setDoc succeeded, attach subtasks under taskRef
+      for (const s of formSubtasks) {
+        const subId = s.name.toLowerCase().replace(/\s+/g, '-').substring(0, 50)
+        const subRef = doc(taskRef, 'subtasks', subId)
+        await setDoc(subRef, {
+          name: s.name,
+          status: s.status || 'pending',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }).catch(async () => {
+          await addDoc(collection(taskRef, 'subtasks'), {
+            name: s.name,
+            status: s.status || 'pending',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })
+        })
+      }
     }
 
     resetForm()
@@ -168,6 +241,7 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
     setEditingTask(null)
     setFormData({ name: '', contractor: '', lineItem: '', isDependency: false })
     setSelectedPhase('')
+    setFormSubtasks([])
   }
 
   const handleEdit = (phaseId: string, taskId: string, task: Task, isDependency: boolean) => {
@@ -178,6 +252,8 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
       lineItem: task.lineItem || '',
       isDependency
     })
+    // Prefill inline subtasks
+    setFormSubtasks((task.subtasks || []).map(s => ({ id: s.id, name: s.name || '', status: s.status || 'pending' })))
     setSelectedPhase(phaseId)
     setShowForm(true)
   }
@@ -206,6 +282,54 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
     })
   }
 
+  const handleAddSubtask = async () => {
+    if (!db || !subtaskFormData.name || !showSubtaskForm) return
+    
+    const { phaseId, taskId, isDependency } = showSubtaskForm
+    const phaseRef = doc(db, 'phases', phaseId)
+    const collectionName = isDependency ? 'dependentTasks' : 'nonDependentTasks'
+    const taskRef = doc(phaseRef, collectionName, taskId)
+    
+    if (editingSubtask) {
+      // Update existing subtask
+      await updateDoc(doc(taskRef, 'subtasks', editingSubtask.subtaskId), {
+        name: subtaskFormData.name,
+        updatedAt: new Date().toISOString()
+      })
+    } else {
+      // Create new subtask
+      const sanitizedId = subtaskFormData.name.toLowerCase().replace(/\s+/g, '-').substring(0, 50)
+      const subtaskRef = doc(taskRef, 'subtasks', sanitizedId)
+      await updateDoc(subtaskRef, {
+        name: subtaskFormData.name,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }).catch(() => {
+        addDoc(collection(taskRef, 'subtasks'), {
+          name: subtaskFormData.name,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        })
+      })
+    }
+    
+    resetSubtaskForm()
+  }
+
+  const resetSubtaskForm = () => {
+    setShowSubtaskForm(null)
+    setEditingSubtask(null)
+    setSubtaskFormData({ name: '' })
+  }
+
+  const handleEditSubtask = (phaseId: string, taskId: string, subtaskId: string, name: string, isDependency: boolean) => {
+    setShowSubtaskForm({ phaseId, taskId, isDependency })
+    setEditingSubtask({ phaseId, taskId, subtaskId, isDependency })
+    setSubtaskFormData({ name })
+  }
+
   const grouped = useMemo(() => {
     const map: Record<string, PhaseData> = {}
     Object.entries(phases).forEach(([phaseId, phaseData]) => {
@@ -215,20 +339,62 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
   }, [phases])
 
   return (
-    <div className="grid gap-4 sm:gap-8">
+    <div className="grid gap-4 sm:gap-6 lg:gap-8">
+      {/* Subtask Form Modal */}
+      {showSubtaskForm && (
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black bg-opacity-50 p-4 sm:p-8 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-md mt-4 sm:mt-0">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                {editingSubtask ? 'Edit Subtask' : 'Add New Subtask'}
+              </h3>
+            </div>
+            
+            <div className="p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Subtask Name *</label>
+                <input
+                  type="text"
+                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                  placeholder="Enter subtask name"
+                  value={subtaskFormData.name}
+                  onChange={(e) => setSubtaskFormData({ name: e.target.value })}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <button
+                className="flex-1 px-4 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold text-sm sm:text-base hover:shadow-lg transition-all active:scale-95"
+                onClick={handleAddSubtask}
+              >
+                {editingSubtask ? 'Update Subtask' : 'Add Subtask'}
+              </button>
+              <button
+                className="flex-1 px-4 py-2 sm:py-3 border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-bold text-sm sm:text-base hover:bg-slate-100 dark:hover:bg-slate-600 transition-all"
+                onClick={resetSubtaskForm}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Task Form */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg p-4 sm:p-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-          <div>
-            <h3 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">Task Management</h3>
+      <div className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl lg:rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg p-3 sm:p-4 lg:p-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4 lg:mb-6">
+          <div className="w-full">
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 dark:text-white">Task Management</h3>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Create, edit, and manage project tasks with hierarchy</p>
           </div>
-          <span className="text-3xl sm:text-4xl flex-shrink-0">✨</span>
+          <span className="text-2xl sm:text-3xl lg:text-4xl flex-shrink-0 self-start sm:self-auto">✨</span>
         </div>
 
         {!showForm && (
           <button
-            className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-lg hover:shadow-xl hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95"
+            className="w-full px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg sm:rounded-lg lg:rounded-xl font-bold text-sm sm:text-base lg:text-lg hover:shadow-xl hover:shadow-blue-200 dark:hover:shadow-blue-900 transition-all active:scale-95"
             onClick={() => setShowForm(true)}
           >
             + Add New Task
@@ -236,11 +402,11 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
         )}
 
         {showForm && (
-          <div className="space-y-4 sm:space-y-5 bg-slate-50 dark:bg-slate-700 rounded-lg sm:rounded-xl p-4 sm:p-6">
+          <div className="space-y-3 sm:space-y-4 lg:space-y-5 bg-slate-50 dark:bg-slate-700 rounded-lg sm:rounded-lg lg:rounded-xl p-3 sm:p-4 lg:p-6">
             <div>
               <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Phase *</label>
               <select
-                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                 value={selectedPhase}
                 onChange={(e) => setSelectedPhase(e.target.value)}
               >
@@ -254,18 +420,18 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
             <div>
               <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Task Name *</label>
               <input
-                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                 placeholder="Enter task name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-5">
               <div>
                 <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Contractor</label>
                 <input
-                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                   placeholder="Contractor name"
                   value={formData.contractor}
                   onChange={(e) => setFormData({ ...formData, contractor: e.target.value })}
@@ -274,7 +440,7 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
               <div>
                 <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Line Item</label>
                 <input
-                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                  className="w-full border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                   placeholder="Line item"
                   value={formData.lineItem}
                   onChange={(e) => setFormData({ ...formData, lineItem: e.target.value })}
@@ -296,15 +462,66 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
               </label>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2 sm:pt-4">
+            {/* Inline Subtasks in the Task Form */}
+            <div className="space-y-2">
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Subtasks (optional)</label>
+              <div className="space-y-2">
+                {formSubtasks.map((s, idx) => (
+                  <div key={s.id || idx} className="flex gap-2 items-center">
+                    <input
+                      className="flex-1 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm sm:text-base"
+                      placeholder="Subtask name"
+                      value={s.name}
+                      onChange={(e) => {
+                        const copy = [...formSubtasks]
+                        copy[idx] = { ...copy[idx], name: e.target.value }
+                        setFormSubtasks(copy)
+                      }}
+                    />
+                    <select
+                      value={s.status || 'pending'}
+                      onChange={(e) => {
+                        const copy = [...formSubtasks]
+                        copy[idx] = { ...copy[idx], status: e.target.value }
+                        setFormSubtasks(copy)
+                      }}
+                      className="w-40 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-600 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm sm:text-base"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="site_completed">Site Completed</option>
+                      <option value="pm_approved">PM Approved</option>
+                    </select>
+                    <button
+                      onClick={() => {
+                        const copy = [...formSubtasks]
+                        copy.splice(idx, 1)
+                        setFormSubtasks(copy)
+                      }}
+                      className="px-3 py-2 text-sm bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded-lg"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  onClick={() => setFormSubtasks([...formSubtasks, { name: '', status: 'pending' }])}
+                  className="mt-1 px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm font-medium"
+                >
+                  + Add Subtask
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-2 sm:pt-4">
               <button
-                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:shadow-lg transition-all active:scale-95"
+                className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold text-sm sm:text-base hover:shadow-lg transition-all active:scale-95"
                 onClick={handleAddTask}
               >
                 {editingTask ? 'Update Task' : 'Create Task'}
               </button>
               <button
-                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:bg-slate-100 dark:hover:bg-slate-600 transition-all"
+                className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-bold text-sm sm:text-base hover:bg-slate-100 dark:hover:bg-slate-600 transition-all"
                 onClick={resetForm}
               >
                 Cancel
@@ -315,7 +532,7 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
       </div>
 
       {/* Phase View */}
-      <div className="space-y-3 sm:space-y-4">
+      <div className="space-y-2 sm:space-y-3 lg:space-y-4">
         {Object.entries(grouped).map(([phaseId, phaseData]) => {
           if (!phaseData) return null
           
@@ -323,9 +540,9 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
           const nonDependentTasks = phaseData.nonDependentTasks || []
           
           return (
-          <div key={phaseId} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div key={phaseId} className="bg-white dark:bg-slate-800 rounded-lg sm:rounded-lg lg:rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             {/* Phase Header */}
-            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 dark:from-slate-700 to-blue-50 dark:to-slate-700">
+            <div className="px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 lg:py-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 dark:from-slate-700 to-blue-50 dark:to-slate-700">
               <h4 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base">
                 📋 {phaseData.name}
               </h4>
@@ -334,7 +551,7 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
             {/* Dependent Tasks */}
             {dependentTasks.length > 0 && (
               <div className="border-b border-slate-200 dark:border-slate-700">
-                <div className="px-4 sm:px-6 py-2 sm:py-3 bg-slate-100 dark:bg-slate-700">
+                <div className="px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-slate-100 dark:bg-slate-700">
                   <h5 className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">📌 Dependent Tasks</h5>
                 </div>
                 <div className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -348,6 +565,8 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
                       onDelete={() => handleDelete(phaseId, task.id, false)}
                       onDeleteSubtask={(subtaskId) => handleDeleteSubtask(phaseId, task.id, subtaskId, false)}
                       onUpdateSubtask={(subtaskId, status) => handleUpdateSubtask(phaseId, task.id, subtaskId, status, false)}
+                      onAddSubtask={() => setShowSubtaskForm({ phaseId, taskId: task.id, isDependency: false })}
+                      onEditSubtask={(subtaskId, name) => handleEditSubtask(phaseId, task.id, subtaskId, name, false)}
                       role={role}
                     />
                   ))}
@@ -358,7 +577,7 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
             {/* Non-Dependent Tasks */}
             {nonDependentTasks.length > 0 && (
               <div>
-                <div className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-100 dark:bg-purple-900">
+                <div className="px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-purple-100 dark:bg-purple-900">
                   <h5 className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-300">⚡ Non-Dependent Tasks</h5>
                 </div>
                 <div className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -372,6 +591,8 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
                       onDelete={() => handleDelete(phaseId, task.id, true)}
                       onDeleteSubtask={(subtaskId) => handleDeleteSubtask(phaseId, task.id, subtaskId, true)}
                       onUpdateSubtask={(subtaskId, status) => handleUpdateSubtask(phaseId, task.id, subtaskId, status, true)}
+                      onAddSubtask={() => setShowSubtaskForm({ phaseId, taskId: task.id, isDependency: true })}
+                      onEditSubtask={(subtaskId, name) => handleEditSubtask(phaseId, task.id, subtaskId, name, true)}
                       role={role}
                     />
                   ))}
@@ -380,8 +601,8 @@ function Tasks({ db, role }: { db: Firestore | null; role: Role }) {
             )}
 
             {dependentTasks.length === 0 && nonDependentTasks.length === 0 && (
-              <div className="px-4 sm:px-6 py-8 text-center text-slate-500 dark:text-slate-400">
-                <p className="text-sm">No tasks in this phase yet</p>
+              <div className="px-3 sm:px-4 lg:px-6 py-6 sm:py-8 text-center text-slate-500 dark:text-slate-400">
+                <p className="text-xs sm:text-sm">No tasks in this phase yet</p>
               </div>
             )}
           </div>
@@ -401,6 +622,8 @@ function TaskCard({
   onDelete,
   onDeleteSubtask,
   onUpdateSubtask,
+  onAddSubtask,
+  onEditSubtask,
   role
 }: {
   phaseId: string
@@ -410,99 +633,124 @@ function TaskCard({
   onDelete: () => void
   onDeleteSubtask: (subtaskId: string) => void
   onUpdateSubtask: (subtaskId: string, status: string) => void
+  onAddSubtask: () => void
+  onEditSubtask: (subtaskId: string, name: string) => void
   role: Role
 }) {
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className="p-4 sm:p-6 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3 sm:mb-4">
-        <div className="flex-1 min-w-0">
-          <h5 className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base break-words">{task.name}</h5>
-          <div className="flex gap-2 flex-wrap mt-2">
-            {isDependency && (
-              <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
-                ⚡ Non-Dependency
-              </span>
-            )}
-            {task.lineItem && (
-              <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
-                📌 {task.lineItem}
-              </span>
-            )}
-            {task.contractor && (
-              <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                👤 {task.contractor}
-              </span>
-            )}
+    <div className="p-3 sm:p-4 lg:p-6 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border-b border-slate-200 dark:border-slate-700 last:border-b-0">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        {/* Task Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-2 sm:gap-3">
+          <div className="flex-1 min-w-0 w-full">
+            <h5 className="font-semibold text-slate-900 dark:text-white text-base sm:text-lg break-words">{task.name}</h5>
+            <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
+              {isDependency && (
+                <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 whitespace-nowrap">
+                  ⚡ Non-Dependency
+                </span>
+              )}
+              {task.lineItem && (
+                <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 truncate">
+                  📌 {task.lineItem}
+                </span>
+              )}
+              {task.contractor && (
+                <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 truncate">
+                  👤 {task.contractor}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-1 sm:gap-2 w-full sm:w-auto flex-shrink-0 justify-end">
+            <button
+              onClick={onEdit}
+              className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg font-medium transition-colors text-xs sm:text-sm whitespace-nowrap"
+            >
+              ✏️ Edit
+            </button>
+            <button
+              onClick={onDelete}
+              className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg font-medium transition-colors text-xs sm:text-sm whitespace-nowrap"
+            >
+              🗑️ Delete
+            </button>
           </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
-          <button
-            onClick={onEdit}
-            className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg font-medium transition-colors text-xs sm:text-sm"
-          >
-            ✏️ Edit
-          </button>
-          <button
-            onClick={onDelete}
-            className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg font-medium transition-colors text-xs sm:text-sm"
-          >
-            🗑️ Delete
-          </button>
-        </div>
-      </div>
 
-      {/* Subtasks */}
-      {(task.subtasks || []).length > 0 && (
-        <div className="mt-4">
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-          >
-            {expanded ? '▼' : '▶'} View Details ({task.subtasks.length} subtasks)
-          </button>
-
-          {expanded && (
-            <div className="mt-3 space-y-2 bg-slate-50 dark:bg-slate-700 rounded-lg p-3 sm:p-4">
-              {(task.subtasks || []).map(sub => (
-                <div key={sub.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white dark:bg-slate-800 p-2 sm:p-3 rounded text-xs sm:text-sm">
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-white break-words">{sub.name}</p>
-                    <span className="inline-block text-xs px-2 py-1 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded mt-1">
-                      {sub.status || 'pending'}
-                    </span>
-                  </div>
-                  <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                    {(sub.status || 'pending') === 'pending' && (
-                      <button
-                        onClick={() => onUpdateSubtask(sub.id, 'site_completed')}
-                        className="px-2 py-1 border border-yellow-300 text-yellow-700 dark:text-yellow-300 rounded text-xs font-medium hover:bg-yellow-50 dark:hover:bg-yellow-900"
-                      >
-                        Complete
-                      </button>
-                    )}
-                    {(sub.status || 'pending') === 'site_completed' && (
-                      <button
-                        onClick={() => onUpdateSubtask(sub.id, 'pm_approved')}
-                        className="px-2 py-1 border border-green-300 text-green-700 dark:text-green-300 rounded text-xs font-medium hover:bg-green-50 dark:hover:bg-green-900"
-                      >
-                        Approve
-                      </button>
-                    )}
-                    <button
-                      onClick={() => onDeleteSubtask(sub.id)}
-                      className="px-2 py-1 border border-red-300 text-red-600 dark:text-red-400 rounded text-xs font-medium hover:bg-red-50 dark:hover:bg-red-900"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+        {/* Subtasks Section */}
+        {(task.subtasks || []).length > 0 || true && (
+          <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              {(task.subtasks || []).length > 0 && (
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 min-w-fit"
+                >
+                  {expanded ? '▼' : '▶'} Subtasks ({task.subtasks?.length || 0})
+                </button>
+              )}
+              {(task.subtasks || []).length === 0 && (
+                <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">No subtasks yet</div>
+              )}
+              <button
+                onClick={onAddSubtask}
+                className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 rounded-lg font-medium transition-colors whitespace-nowrap"
+              >
+                + Add Subtask
+              </button>
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Expanded Subtasks List */}
+            {expanded && (task.subtasks || []).length > 0 && (
+              <div className="space-y-2 bg-slate-50 dark:bg-slate-700 rounded-lg p-2 sm:p-4 mt-3">
+                {(task.subtasks || []).map(sub => (
+                  <div key={sub.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white dark:bg-slate-800 p-2 sm:p-3 rounded-lg text-xs sm:text-sm border border-slate-200 dark:border-slate-600">
+                    <div className="flex-1 min-w-0 w-full">
+                      <p className="font-medium text-slate-900 dark:text-white break-words text-sm">{sub.name}</p>
+                      <span className="inline-block text-xs px-2 py-1 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded mt-1">
+                        {sub.status === 'site_completed' ? '🔧 Site Completed' : sub.status === 'pm_approved' ? '✅ Approved' : '⏳ Pending'}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 flex-wrap sm:flex-nowrap flex-shrink-0 w-full sm:w-auto justify-end">
+                      {(sub.status || 'pending') === 'pending' && (
+                        <button
+                          onClick={() => onUpdateSubtask(sub.id, 'site_completed')}
+                          className="px-2 sm:px-2.5 py-1 border border-yellow-300 text-yellow-700 dark:text-yellow-300 rounded text-xs font-medium hover:bg-yellow-50 dark:hover:bg-yellow-900 transition-colors whitespace-nowrap"
+                        >
+                          Complete
+                        </button>
+                      )}
+                      {(sub.status || 'pending') === 'site_completed' && (
+                        <button
+                          onClick={() => onUpdateSubtask(sub.id, 'pm_approved')}
+                          className="px-2 sm:px-2.5 py-1 border border-green-300 text-green-700 dark:text-green-300 rounded text-xs font-medium hover:bg-green-50 dark:hover:bg-green-900 transition-colors whitespace-nowrap"
+                        >
+                          Approve
+                        </button>
+                      )}
+                      <button
+                        onClick={() => onEditSubtask(sub.id, sub.name || '')}
+                        className="px-2 sm:px-2.5 py-1 border border-blue-300 text-blue-600 dark:text-blue-400 rounded text-xs font-medium hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors whitespace-nowrap"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => onDeleteSubtask(sub.id)}
+                        className="px-2 sm:px-2.5 py-1 border border-red-300 text-red-600 dark:text-red-400 rounded text-xs font-medium hover:bg-red-50 dark:hover:bg-red-900 transition-colors whitespace-nowrap"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
