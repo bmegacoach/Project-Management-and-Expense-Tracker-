@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Data Extractor</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #e2e8f0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .status {
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 6px;
+      display: none;
+    }
+
+    .status.loading {
+      display: block;
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid #3b82f6;
+      color: #93c5fd;
+    }
+
+    .status.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid #22c55e;
+      color: #86efac;
+    }
+
+    .status.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+    }
+
+    .results {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 30px;
+    }
+
+    .results h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #93c5fd;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .summary-card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .summary-card label {
+      display: block;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .summary-card .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #60a5fa;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    table thead {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    table th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #93c5fd;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .export-section {
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .export-section button {
+      margin-right: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      margin-top: 10px;
+      resize: vertical;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(93, 165, 250, 0.2);
+      border-radius: 50%;
+      border-top-color: #5da5fa;
+      animation: spin 0.8s linear infinite;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📊 Budget Data Extractor</h1>
+      <p>Extract and analyze your Firebase budget data</p>
+      <div class="controls">
+        <button onclick="extractBudgetData()">Extract Data</button>
+        <button onclick="clearResults()">Clear Results</button>
+      </div>
+    </header>
+
+    <div id="status" class="status"></div>
+
+    <div id="results" style="display: none;">
+      <div class="results">
+        <h2>📈 Budget Summary</h2>
+        <div class="summary-grid" id="summaryGrid"></div>
+
+        <h2>📋 Budget Items by Phase</h2>
+        <div id="tableContainer"></div>
+
+        <div class="export-section">
+          <h2>💾 Export Data</h2>
+          <div class="controls">
+            <button onclick="copyJSON()">Copy as JSON</button>
+            <button onclick="downloadJSON()">Download JSON</button>
+            <button onclick="copyCSV()">Copy as CSV</button>
+          </div>
+          <textarea id="dataExport" readonly></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: 'AIzaSyALLCpmX9jtAHNVKdCkK53ZG_-Osav4PYI',
+      authDomain: 'tech-camp-construction-project.firebaseapp.com',
+      projectId: 'tech-camp-construction-project',
+      storageBucket: 'tech-camp-construction-project.firebasestorage.app',
+      messagingSenderId: '8702531655',
+      appId: '1:8702531655:web:fbe635528823cebfb23962'
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+
+    const STATUS_LABELS = {
+      1: 'Not Started',
+      2: 'In Progress',
+      3: 'On Hold',
+      4: 'Completed',
+      5: 'Pending Review',
+      6: 'Approved / Closed'
+    };
+
+    const STATUS_COLORS = {
+      'Not Started': '#6b7280',
+      'In Progress': '#3b82f6',
+      'On Hold': '#f97316',
+      'Completed': '#22c55e',
+      'Pending Review': '#a855f7',
+      'Approved / Closed': '#14b8a6'
+    };
+
+    let budgetData = null;
+
+    async function extractBudgetData() {
+      try {
+        showStatus('Extracting budget data...', 'loading');
+
+        const snapshot = await db.collection('budgetLineItems').get();
+
+        if (snapshot.empty) {
+          showStatus('No budget items found in Firebase.', 'error');
+          return;
+        }
+
+        const items = [];
+        snapshot.forEach(doc => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+
+        items.sort((a, b) => (a.phase || 'Other').localeCompare(b.phase || 'Other'));
+
+        budgetData = {
+          items: items,
+          totals: {
+            allocated: items.reduce((s, i) => s + (i.value || 0), 0),
+            spent: items.reduce((s, i) => s + (i.spent || 0), 0)
+          }
+        };
+        budgetData.totals.remaining = budgetData.totals.allocated - budgetData.totals.spent;
+        budgetData.totals.burnRate = ((budgetData.totals.spent / budgetData.totals.allocated) * 100).toFixed(1);
+
+        displayResults();
+        showStatus(`Successfully extracted ${items.length} budget items.`, 'success');
+      } catch (error) {
+        console.error('Error:', error);
+        showStatus('Error extracting data: ' + error.message, 'error');
+      }
+    }
+
+    function displayResults() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.style.display = 'block';
+
+      // Summary grid
+      const summaryGrid = document.getElementById('summaryGrid');
+      summaryGrid.innerHTML = `
+        <div class="summary-card">
+          <label>Total Allocated</label>
+          <div class="value">$${budgetData.totals.allocated.toLocaleString()}</div>
+        </div>
+        <div class="summary-card">
+          <label>Total Spent</label>
+          <div class="value">$${budgetData.totals.spent.toLocaleString()}</div>
+        </div>
+        <div class="summary-card">
+          <label>Total Remaining</label>
+          <div class="value">$${budgetData.totals.remaining.toLocaleString()}</div>
+        </div>
+        <div class="summary-card">
+          <label>Burn Rate</label>
+          <div class="value">${budgetData.totals.burnRate}%</div>
+        </div>
+        <div class="summary-card">
+          <label>Total Items</label>
+          <div class="value">${budgetData.items.length}</div>
+        </div>
+      `;
+
+      // Phase tables
+      const phases = [...new Set(budgetData.items.map(i => i.phase || 'Other'))];
+      let tablesHTML = '';
+
+      phases.forEach(phase => {
+        const phaseItems = budgetData.items.filter(i => (i.phase || 'Other') === phase);
+        const phaseAllocated = phaseItems.reduce((s, i) => s + (i.value || 0), 0);
+        const phaseSpent = phaseItems.reduce((s, i) => s + (i.spent || 0), 0);
+        const phaseRemaining = phaseAllocated - phaseSpent;
+        const phaseBurnRate = ((phaseSpent / phaseAllocated) * 100).toFixed(1);
+
+        tablesHTML += `
+          <h3 style="margin-top: 30px; margin-bottom: 15px; color: #93c5fd;">${phase}</h3>
+          <p style="font-size: 12px; color: #94a3b8; margin-bottom: 15px;">
+            Allocated: $${phaseAllocated.toLocaleString()} | Spent: $${phaseSpent.toLocaleString()} | 
+            Remaining: $${phaseRemaining.toLocaleString()} | Burn: ${phaseBurnRate}%
+          </p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Allocated</th>
+                  <th>Spent</th>
+                  <th>Remaining</th>
+                  <th>Status</th>
+                  <th>Owner</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${phaseItems.map(item => {
+                  const remaining = (item.value || 0) - (item.spent || 0);
+                  const status = STATUS_LABELS[item.status] || 'Unknown';
+                  const color = STATUS_COLORS[status] || '#6b7280';
+                  return `
+                    <tr>
+                      <td>${item.name || '[Unnamed]'}</td>
+                      <td>$${(item.value || 0).toLocaleString()}</td>
+                      <td>$${(item.spent || 0).toLocaleString()}</td>
+                      <td>$${remaining.toLocaleString()}</td>
+                      <td><span class="status-badge" style="background: ${color}22; color: ${color}; border: 1px solid ${color}44;">${status}</span></td>
+                      <td>${item.owner || '[Not Set]'}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      });
+
+      document.getElementById('tableContainer').innerHTML = tablesHTML;
+
+      // Export data
+      document.getElementById('dataExport').value = JSON.stringify(budgetData, null, 2);
+    }
+
+    function showStatus(message, type) {
+      const statusDiv = document.getElementById('status');
+      const spinner = type === 'loading' ? '<span class="loading-spinner"></span>' : '';
+      statusDiv.innerHTML = spinner + message;
+      statusDiv.className = 'status ' + type;
+    }
+
+    function clearResults() {
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('status').innerHTML = '';
+      document.getElementById('status').className = 'status';
+      budgetData = null;
+    }
+
+    function copyJSON() {
+      const text = document.getElementById('dataExport').value;
+      navigator.clipboard.writeText(text).then(() => {
+        showStatus('JSON copied to clipboard!', 'success');
+      });
+    }
+
+    function downloadJSON() {
+      const text = document.getElementById('dataExport').value;
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+      element.setAttribute('download', 'budget-data.json');
+      element.click();
+      showStatus('JSON file downloaded!', 'success');
+    }
+
+    function copyCSV() {
+      if (!budgetData) return;
+
+      let csv = 'Item,Phase,Allocated,Spent,Remaining,Status,Owner,Due Date\n';
+      budgetData.items.forEach(item => {
+        const remaining = (item.value || 0) - (item.spent || 0);
+        const status = STATUS_LABELS[item.status] || 'Unknown';
+        csv += `"${item.name || '[Unnamed]'}","${item.phase || '[Not Set]'}","$${(item.value || 0).toLocaleString()}","$${(item.spent || 0).toLocaleString()}","$${remaining.toLocaleString()}","${status}","${item.owner || '[Not Set]'}","${item.dueDate || '[Not Set]'}"\n`;
+      });
+
+      navigator.clipboard.writeText(csv).then(() => {
+        showStatus('CSV copied to clipboard!', 'success');
+      });
+    }
+  </script>
+</body>
+</html>

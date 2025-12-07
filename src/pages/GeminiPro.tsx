@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { Firestore, collection, onSnapshot } from 'firebase/firestore'
-import OpenAI from 'openai'
 
 type Role = 'site_manager' | 'project_manager' | 'portfolio_manager'
 
@@ -32,12 +31,6 @@ function GeminiPro({ db, role }: { db: Firestore | null; role: Role }) {
     setOutput('')
 
     try {
-      const client = new OpenAI({
-        baseURL: 'https://api.llm7.io/v1',
-        apiKey: 'unused',
-        dangerouslyAllowBrowser: true
-      })
-
       let prompt = ''
       if (toolType === 'reminders') {
         const overdue = tasks.filter(t => t.status !== 'pm_approved')
@@ -53,16 +46,38 @@ function GeminiPro({ db, role }: { db: Firestore | null; role: Role }) {
         prompt = `Analyze schedule risks for a construction project where ${pending.length}/${total} tasks are not yet approved (${percentage}% remaining). Provide:\n1. Risk assessment\n2. Potential impacts\n3. 3-4 mitigation strategies`
       }
 
-      console.log('Calling llm7 API...')
+      console.log('Calling llm7.io API...')
 
-      const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini-2024-07-18',
-        messages: [{ role: 'user', content: prompt }]
+      const response = await fetch('https://api.llm7.io/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer key_8cb5f234fa88aa70b63ef949'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful construction project assistant.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2048
+        })
       })
 
-      console.log('Response:', response)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(`llm7.io API error: ${error.error?.message || response.statusText}`)
+      }
 
-      const result = response.choices?.[0]?.message?.content || 'No response received'
+      const data = await response.json()
+      const result = data.choices?.[0]?.message?.content || 'No response received'
       setOutput(result)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'

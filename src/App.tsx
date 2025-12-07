@@ -66,20 +66,20 @@ const initializePRDData = async (db: any) => {
 }
 
 const tabs = [
-  { key: 'dashboard', label: '📊 Dashboard', icon: '📊' },
-  { key: 'tasks', label: '✓ Tasks', icon: '✓' },
-  { key: 'task-status', label: '📈 Task Status', icon: '📈' },
-  { key: 'team-management', label: '👷 Teams', icon: '👷' },
-  { key: 'team-performance', label: '📊 Performance', icon: '📊' },
-  { key: 'budget', label: '💰 Budget', icon: '💰' },
-  { key: 'budget-dashboard', label: '📉 Analysis', icon: '📉' },
-  { key: 'budget-allocation', label: '💵 Allocation', icon: '💵' },
-  { key: 'expenses', label: '💸 Expenses', icon: '💸' },
-  { key: 'daily-reports', label: '📝 Reports', icon: '📝' },
-  { key: 'contractors', label: '🏗️ Contractors', icon: '🏗️' },
-  { key: 'media', label: '📸 Media', icon: '📸' },
-  { key: 'ask', label: '💬 Ask AI', icon: '💬' },
-  { key: 'pro', label: '🤖 AI Pro', icon: '🤖' }
+  { key: 'dashboard', label: 'Dashboard', icon: '' },
+  { key: 'tasks', label: 'Tasks', icon: '' },
+  { key: 'task-status', label: 'Task Status', icon: '' },
+  { key: 'team-management', label: 'Teams', icon: '' },
+  { key: 'team-performance', label: 'Performance', icon: '' },
+  { key: 'budget', label: 'Budget', icon: '' },
+  { key: 'budget-dashboard', label: 'Analysis', icon: '' },
+  { key: 'budget-allocation', label: 'Allocation', icon: '' },
+  { key: 'expenses', label: 'Expenses', icon: '' },
+  { key: 'daily-reports', label: 'Reports', icon: '' },
+  { key: 'contractors', label: 'Contractors', icon: '' },
+  { key: 'media', label: 'Media', icon: '' },
+  { key: 'ask', label: 'Ask AI', icon: '' },
+  { key: 'pro', label: 'AI Pro', icon: '' }
 ]
 
 function App() {
@@ -145,7 +145,7 @@ function App() {
         <div className="p-4 sm:p-6 border-b border-slate-800">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">📐</span>
+              <span className="text-white font-bold text-lg">●</span>
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-base font-bold text-white">FPM BuildTrack</div>
@@ -183,7 +183,6 @@ function App() {
                   : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
               }`}
             >
-              <span className="mr-2">{tab.icon}</span>
               {tab.label}
             </button>
           ))}

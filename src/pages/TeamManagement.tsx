@@ -563,7 +563,7 @@ function TeamCard({ team, onEdit, onDelete, getCapacityColor, getAvailabilityCol
         )}
         <div className="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
           <p className="text-xs text-slate-600 dark:text-slate-400">Availability</p>
-          <p className={`text-sm font-bold capitalize ${getAvailabilityColor(team.availability || 'available').split(' ')[0]}`}>
+          <p className={`text-sm font-bold capitalize ${getAvailabilityColor(team.availability || 'available').split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
             {team.availability || 'available'}
           </p>
         </div>

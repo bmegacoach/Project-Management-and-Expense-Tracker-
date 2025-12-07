@@ -7,7 +7,22 @@ type BudgetDoc = { totalBudget?: number }
 type Draw = { id: string; drawNumber?: number; amount?: number; status?: string; scheduledAt?: string; taskAllocation?: number; interestMonths?: number }
 type Task = { id: string; phase?: string; name?: string; status?: string; approvedValue?: number }
 type PRDConfig = { PROJECT_WORK_VALUE?: number; TOTAL_SCHEDULED_DRAWS?: number; MONTHLY_INTEREST?: number; PROPERTY_ADDRESS?: string; PROJECT_NAME?: string }
-type BudgetLineItem = { id: string; name?: string; value?: number; spent?: number; remaining?: number }
+type BudgetLineItem = { id: string; name?: string; value?: number; spent?: number; remaining?: number; phase?: string; status?: number; owner?: string; dueDate?: string; notes?: string }
+
+// Status label mapping
+const STATUS_LABELS: Record<number, { label: string; color: string; bgColor: string }> = {
+  1: { label: 'Not Started', color: 'text-gray-700 dark:text-gray-300', bgColor: 'bg-gray-100 dark:bg-gray-700' },
+  2: { label: 'In Progress', color: 'text-blue-700 dark:text-blue-300', bgColor: 'bg-blue-100 dark:bg-blue-900' },
+  3: { label: 'On Hold', color: 'text-orange-700 dark:text-orange-300', bgColor: 'bg-orange-100 dark:bg-orange-900' },
+  4: { label: 'Completed', color: 'text-green-700 dark:text-green-300', bgColor: 'bg-green-100 dark:bg-green-900' },
+  5: { label: 'Pending Review', color: 'text-purple-700 dark:text-purple-300', bgColor: 'bg-purple-100 dark:bg-purple-900' },
+  6: { label: 'Approved/Closed', color: 'text-teal-700 dark:text-teal-300', bgColor: 'bg-teal-100 dark:bg-teal-900' }
+}
+
+const getStatusLabel = (status?: number) => {
+  if (!status) return STATUS_LABELS[1]
+  return STATUS_LABELS[status] || STATUS_LABELS[1]
+}
 
 function Budget({ db, role }: { db: Firestore | null; role: Role }) {
   // Default PRD Constants (will be overridden by DB)
@@ -299,47 +314,110 @@ Project: ${prdConfig.PROJECT_NAME || 'RED CARPET CONTRACTORS - Tech Camp 1'}
             No budget line items yet. Run migration to populate.
           </div>
         ) : (
-          <div className="space-y-3 sm:space-y-4">
-            {budgetLineItems.map(item => {
-              const percentage = item.value && item.value > 0 
-                ? ((item.spent || 0) / item.value) * 100 
-                : 0
+          <div className="space-y-6 sm:space-y-8">
+            {/* Group by Phase */}
+            {Array.from(new Set(budgetLineItems.map(i => i.phase || 'Other'))).map(phase => {
+              const phaseItems = budgetLineItems.filter(i => (i.phase || 'Other') === phase)
+              const phaseTotalBudget = phaseItems.reduce((a, i) => a + (i.value || 0), 0)
+              const phaseTotalSpent = phaseItems.reduce((a, i) => a + (i.spent || 0), 0)
+              const phaseRemaining = phaseTotalBudget - phaseTotalSpent
+              const phasePercentage = phaseTotalBudget > 0 ? (phaseTotalSpent / phaseTotalBudget) * 100 : 0
               
               return (
-                <div key={item.id} className="border border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:shadow-md transition-shadow">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <h5 className="font-semibold text-slate-900 dark:text-white text-xs sm:text-sm break-words">{item.name}</h5>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        Spent: ${(item.spent || 0).toLocaleString()} / ${(item.value || 0).toLocaleString()}
+                <div key={phase} className="border border-slate-300 dark:border-slate-600 rounded-lg sm:rounded-xl overflow-hidden">
+                  {/* Phase Header */}
+                  <div className="bg-gradient-to-r from-slate-100 dark:from-slate-700 to-blue-50 dark:to-slate-700 px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-300 dark:border-slate-600">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{phase}</h4>
+                      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 text-xs sm:text-sm">
+                        <div>
+                          <span className="text-slate-600 dark:text-slate-400">Budget:</span>
+                          <span className="font-bold text-slate-900 dark:text-white ml-2">${phaseTotalBudget.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-600 dark:text-slate-400">Spent:</span>
+                          <span className="font-bold text-slate-900 dark:text-white ml-2">${phaseTotalSpent.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-600 dark:text-slate-400">Remaining:</span>
+                          <span className="font-bold text-slate-900 dark:text-white ml-2">${phaseRemaining.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Phase Progress */}
+                    <div className="space-y-1">
+                      <div className="w-full bg-slate-300 dark:bg-slate-600 rounded-full h-2 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            phasePercentage <= 50 ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                            phasePercentage <= 90 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                            'bg-gradient-to-r from-red-500 to-red-600'
+                          }`}
+                          style={{ width: `${Math.min(phasePercentage, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                        {phasePercentage.toFixed(1)}% spent
                       </p>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <span className={`text-sm sm:text-base font-bold ${
-                        percentage <= 50 ? 'text-green-600 dark:text-green-400' :
-                        percentage <= 90 ? 'text-yellow-600 dark:text-yellow-400' :
-                        'text-red-600 dark:text-red-400'
-                      }`}>
-                        {percentage.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Progress bar */}
-                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 sm:h-2.5 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        percentage <= 50 ? 'bg-gradient-to-r from-green-500 to-green-600' :
-                        percentage <= 90 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
-                        'bg-gradient-to-r from-red-500 to-red-600'
-                      }`}
-                      style={{ width: `${Math.min(percentage, 100)}%` }}
-                    />
                   </div>
 
-                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mt-2">
-                    <span>Remaining: ${((item.value || 0) - (item.spent || 0)).toLocaleString()}</span>
-                    <span>Budget: ${(item.value || 0).toLocaleString()}</span>
+                  {/* Phase Items Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs sm:text-sm">
+                      <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                        <tr>
+                          <th className="px-3 sm:px-4 py-3 text-left text-slate-700 dark:text-slate-300 font-semibold">Item</th>
+                          <th className="px-3 sm:px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-semibold">Allocated</th>
+                          <th className="px-3 sm:px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-semibold">Spent</th>
+                          <th className="px-3 sm:px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-semibold">Remaining</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-slate-700 dark:text-slate-300 font-semibold">Status</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-slate-700 dark:text-slate-300 font-semibold">Owner</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                        {phaseItems.map(item => {
+                          const itemPercentage = item.value && item.value > 0 
+                            ? ((item.spent || 0) / item.value) * 100 
+                            : 0
+                          const statusInfo = getStatusLabel(item.status)
+                          
+                          return (
+                            <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                              <td className="px-3 sm:px-4 py-3 text-slate-900 dark:text-white font-medium">
+                                <div>
+                                  <p className="font-semibold">{item.name || 'Unnamed Item'}</p>
+                                  {item.notes && <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{item.notes}</p>}
+                                </div>
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 text-right text-slate-900 dark:text-white font-semibold">
+                                ${(item.value || 0).toLocaleString()}
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 text-right text-slate-900 dark:text-white">
+                                ${(item.spent || 0).toLocaleString()}
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 text-right">
+                                <span className={`font-semibold ${
+                                  itemPercentage <= 50 ? 'text-green-600 dark:text-green-400' :
+                                  itemPercentage <= 90 ? 'text-yellow-600 dark:text-yellow-400' :
+                                  'text-red-600 dark:text-red-400'
+                                }`}>
+                                  ${((item.value || 0) - (item.spent || 0)).toLocaleString()}
+                                </span>
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 text-center">
+                                <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full font-medium whitespace-nowrap ${statusInfo.color} ${statusInfo.bgColor}`}>
+                                  {statusInfo.label}
+                                </span>
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 text-slate-600 dark:text-slate-400">
+                                {item.owner || '—'}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )
@@ -349,28 +427,45 @@ Project: ${prdConfig.PROJECT_NAME || 'RED CARPET CONTRACTORS - Tech Camp 1'}
 
         {/* Summary Stats */}
         {budgetLineItems.length > 0 && (
-          <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-3 sm:p-4">
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Total Budget</p>
-                <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
-                  ${budgetLineItems.reduce((a, i) => a + (i.value || 0), 0).toLocaleString()}
-                </p>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-3 sm:p-4">
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Total Spent</p>
-                <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
-                  ${budgetLineItems.reduce((a, i) => a + (i.spent || 0), 0).toLocaleString()}
-                </p>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-3 sm:p-4">
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Remaining</p>
-                <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
-                  ${(budgetLineItems.reduce((a, i) => a + (i.value || 0), 0) - budgetLineItems.reduce((a, i) => a + (i.spent || 0), 0)).toLocaleString()}
-                </p>
+          <>
+            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700">
+              <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mb-4">Project Summary</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-3 sm:p-4">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Total Budget</p>
+                  <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
+                    ${budgetLineItems.reduce((a, i) => a + (i.value || 0), 0).toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-3 sm:p-4">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Total Spent</p>
+                  <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
+                    ${budgetLineItems.reduce((a, i) => a + (i.spent || 0), 0).toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-3 sm:p-4">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Remaining</p>
+                  <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
+                    ${(budgetLineItems.reduce((a, i) => a + (i.value || 0), 0) - budgetLineItems.reduce((a, i) => a + (i.spent || 0), 0)).toLocaleString()}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+
+            {/* Status Legend */}
+            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700">
+              <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mb-4">Status Legend</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+                {Object.entries(STATUS_LABELS).map(([key, { label, color, bgColor }]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${color} ${bgColor}`}>
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

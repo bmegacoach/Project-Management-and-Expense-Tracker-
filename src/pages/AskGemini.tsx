@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { Firestore, collection, onSnapshot, addDoc, serverTimestamp, query as firebaseQuery, orderBy } from 'firebase/firestore'
-import OpenAI from 'openai'
 
 type Role = 'site_manager' | 'project_manager' | 'portfolio_manager'
 
@@ -148,12 +147,6 @@ function AskGemini({ db, role }: { db: Firestore | null; role: Role }) {
     try {
       // Retrieve relevant context from database (RAG)
       const relevantDocs = retrieveRelevantContext(query)
-      
-      const client = new OpenAI({
-        baseURL: 'https://api.llm7.io/v1',
-        apiKey: 'unused',
-        dangerouslyAllowBrowser: true
-      })
 
       // Build comprehensive context for the model
       const projectSummary = `Project Status:
@@ -172,17 +165,39 @@ function AskGemini({ db, role }: { db: Firestore | null; role: Role }) {
 
       const fullContext = `${projectSummary}${retrievedContext}\n\nUser Role: ${role}\nUser Question: ${query}`
 
-      console.log('Calling llm7 API with RAG context...')
+      console.log('Calling llm7.io API with RAG context...')
       console.log('Retrieved documents:', relevantDocs.length)
 
-      const response = await client.chat.completions.create({
-        model: 'gpt-4.1-2025-04-14',
-        messages: [{ role: 'user', content: fullContext }]
+      const response = await fetch('https://api.llm7.io/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer key_8cb5f234fa88aa70b63ef949'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful construction project assistant. Provide accurate, concise answers based on the project context provided.'
+            },
+            {
+              role: 'user',
+              content: fullContext
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2048
+        })
       })
 
-      console.log('Response:', response)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(`llm7.io API error: ${error.error?.message || response.statusText}`)
+      }
 
-      const aiResponse = response.choices?.[0]?.message?.content || 'No response received from API'
+      const data = await response.json()
+      const aiResponse = data.choices?.[0]?.message?.content || 'No response received from llm7.io'
       const assistantMessage: Message = { role: 'assistant', content: aiResponse, timestamp: Date.now() }
       setMessages(prev => [...prev, assistantMessage])
       await saveMessageToDb('assistant', aiResponse)
@@ -215,8 +230,8 @@ function AskGemini({ db, role }: { db: Firestore | null; role: Role }) {
             </div>
           ) : (
             messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-xl ${
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
+                <div className={`max-w-2xl px-4 py-3 rounded-xl ${
                   msg.role === 'user'
                     ? 'bg-blue-600 text-white rounded-br-none'
                     : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-none'

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Firestore, collection, doc, onSnapshot, getDoc, getDocs } from 'firebase/firestore'
+import { Firestore, collection, doc, onSnapshot, getDoc, getDocs, addDoc } from 'firebase/firestore'
 
 type Role = 'site_manager' | 'project_manager' | 'portfolio_manager'
 
@@ -8,7 +8,7 @@ type Budget = { totalBudget?: number }
 type Draw = { id: string; amount?: number; status?: string }
 type PRDConfig = { PROJECT_WORK_VALUE?: number; TOTAL_SCHEDULED_DRAWS?: number; MONTHLY_INTEREST?: number; PROPERTY_ADDRESS?: string; PROJECT_NAME?: string }
 type Expense = { id: string; category: string; amount: number; date: string; status: 'pending' | 'approved' | 'rejected' }
-type BudgetAllocation = { id: string; allocated: number; spent: number; category?: string }
+type BudgetAllocation = { id: string; value?: number; spent?: number; remaining?: number; category?: string; allocated?: number }
 type DailyReport = { id: string; date: string; phaseId: string }
 
 const PHASE_IDS = [
@@ -46,6 +46,54 @@ function Dashboard({ db, role }: { db: Firestore | null; role: Role }) {
   const [dailyReports, setDailyReports] = useState<DailyReport[]>([])
   const [phaseProgress, setPhaseProgress] = useState<Record<string, { completed: number; total: number }>>({})
   const [viewMode, setViewMode] = useState<'overview' | 'budget' | 'team' | 'phase'>('overview')
+  const [showSeedButton, setShowSeedButton] = useState(false)
+
+  const seedSampleData = async () => {
+    if (!db) return
+    try {
+      // Add sample tasks
+      const sampleTasks = [
+        { name: 'Permit Finalization', phase: 'phase-1-pre-construction-demolition', contractor: 'Demolition Crew', status: 'completed', approvedValue: 5000 },
+        { name: 'Mobile Home Setup', phase: 'phase-1-pre-construction-demolition', contractor: 'General', status: 'in-progress', approvedValue: 8000 },
+        { name: 'Site Security', phase: 'phase-1-pre-construction-demolition', contractor: 'MEP', status: 'completed', approvedValue: 3000 },
+        { name: 'Structural Work', phase: 'phase-2-structural-envelope', contractor: 'Structural', status: 'in-progress', approvedValue: 25000 },
+        { name: 'MEP Rough-In', phase: 'phase-3-mep-rough-in', contractor: 'MEP', status: 'pending', approvedValue: 20000 },
+        { name: 'Interior Finishes', phase: 'phase-4-interior-finishes-exterior-cladding', contractor: 'General', status: 'not_started', approvedValue: 15000 }
+      ]
+      
+      for (const task of sampleTasks) {
+        await addDoc(collection(db, 'tasks'), task)
+      }
+
+      // Add sample budget items
+      const sampleBudget = [
+        { name: 'Permits', phase: 'Phase 1', value: 5000, spent: 3000, remaining: 2000, status: 2 },
+        { name: 'Demolition', phase: 'Phase 1', value: 12000, spent: 8000, remaining: 4000, status: 2 },
+        { name: 'Framing', phase: 'Phase 2', value: 35000, spent: 15000, remaining: 20000, status: 2 },
+        { name: 'MEP Systems', phase: 'Phase 3', value: 28000, spent: 5000, remaining: 23000, status: 1 },
+        { name: 'Finish Work', phase: 'Phase 4', value: 25000, spent: 0, remaining: 25000, status: 1 }
+      ]
+
+      for (const item of sampleBudget) {
+        await addDoc(collection(db, 'budgetLineItems'), item)
+      }
+
+      // Add sample draws
+      const sampleDraws = [
+        { drawNumber: 1, amount: 15000, status: 'approved' },
+        { drawNumber: 2, amount: 20000, status: 'pending' }
+      ]
+
+      for (const draw of sampleDraws) {
+        await addDoc(collection(db, 'draws'), draw)
+      }
+
+      console.log('✅ Sample data seeded successfully')
+      setShowSeedButton(false)
+    } catch (error) {
+      console.error('Error seeding data:', error)
+    }
+  }
 
   useEffect(() => {
     if (!db) return
@@ -65,7 +113,12 @@ function Dashboard({ db, role }: { db: Firestore | null; role: Role }) {
     const unsub1 = onSnapshot(collection(db, 'tasks'), s => {
       const list: Task[] = []
       s.forEach(d => list.push({ id: d.id, ...(d.data() as any) }))
+      console.log('Dashboard tasks loaded:', list.length, list.slice(0, 3))
       setTasks(list)
+      // Show seed button if no tasks and no budget items
+      if (list.length === 0) {
+        setShowSeedButton(true)
+      }
     })
 
     const unsub2 = onSnapshot(doc(db, 'budget', 'totals'), s => {
@@ -85,9 +138,10 @@ function Dashboard({ db, role }: { db: Firestore | null; role: Role }) {
     })
 
     const loadBudgetAllocations = async () => {
-      const snapshot = await getDocs(collection(db, 'budgetAllocations'))
+      const snapshot = await getDocs(collection(db, 'budgetLineItems'))
       const list: BudgetAllocation[] = []
       snapshot.forEach(d => list.push({ id: d.id, ...(d.data() as any) }))
+      console.log('Budget items loaded:', list.length, list.slice(0, 2))
       setBudgetAllocations(list)
     }
     loadBudgetAllocations()
@@ -123,32 +177,53 @@ function Dashboard({ db, role }: { db: Firestore | null; role: Role }) {
 
   // Calculate metrics
   const totalBudget = prdConfig.PROJECT_WORK_VALUE || 110000
-  const approvedWorkValue = tasks.reduce((a, t) => a + (t.status === 'pm_approved' ? (t.approvedValue || 0) : 0), 0)
+  const approvedWorkValue = tasks.reduce((a, t) => {
+    const status = (t.status || '').toLowerCase()
+    if (status === 'pm_approved' || status === 'completed' || status === 'site_completed') {
+      return a + (t.approvedValue || 0)
+    }
+    return a
+  }, 0)
   const cwpPercentage = totalBudget > 0 ? (approvedWorkValue / totalBudget) * 100 : 0
   const remainingBudget = Math.max(totalBudget - approvedWorkValue, 0)
   const totalDraws = draws.reduce((a, d) => a + (d.amount || 0), 0)
 
-  const allocatedBudget = budgetAllocations.reduce((a, b) => a + b.allocated, 0)
-  const spentBudget = budgetAllocations.reduce((a, b) => a + b.spent, 0)
+  // Calculate allocated and spent from budget line items
+  const allocatedBudget = budgetAllocations.reduce((a, b) => a + (b.value || b.allocated || 0), 0)
+  const spentBudget = budgetAllocations.reduce((a, b) => a + (b.spent || 0), 0)
+  // Use remaining field if available, otherwise calculate as allocated - spent
+  const remainingBudgetAmount = allocatedBudget > 0 
+    ? allocatedBudget - spentBudget
+    : 0
   const totalExpenses = expenses.length
   const approvedExpenses = expenses.filter(e => e.status === 'approved').length
   const pendingExpenses = expenses.filter(e => e.status === 'pending').length
 
   const taskStats = {
     total: tasks.length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-    inProgress: tasks.filter(t => t.status === 'in-progress').length,
-    pending: tasks.filter(t => !['completed', 'in-progress'].includes(t.status || '')).length
+    completed: tasks.filter(t => {
+      const status = (t.status || '').toLowerCase()
+      return status === 'completed' || status === 'pm_approved'
+    }).length,
+    inProgress: tasks.filter(t => {
+      const status = (t.status || '').toLowerCase()
+      return status === 'in-progress' || status === 'waiting_pm_approval' || status === 'in_progress' || status === 'site_completed'
+    }).length,
+    pending: tasks.filter(t => {
+      const status = (t.status || '').toLowerCase()
+      return status !== 'completed' && status !== 'pm_approved' && status !== 'in-progress' && status !== 'waiting_pm_approval' && status !== 'site_completed' && status !== 'in_progress'
+    }).length
   }
 
   const overallPhasePercentage = Object.values(phaseProgress).length > 0
-    ? Math.round(
-        Object.values(phaseProgress).reduce((sum, p) => sum + (p.total > 0 ? (p.completed / p.total) * 100 : 0), 0) /
-        Object.values(phaseProgress).length
-      )
+    ? (() => {
+        const totalTasks = Object.values(phaseProgress).reduce((sum, p) => sum + p.total, 0)
+        const completedTasks = Object.values(phaseProgress).reduce((sum, p) => sum + p.completed, 0)
+        return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+      })()
     : 0
 
-  const budgetStatus = spentBudget > 0 && allocatedBudget > 0
+  const budgetStatus = allocatedBudget > 0
     ? Math.round((spentBudget / allocatedBudget) * 100)
     : 0
 
@@ -167,7 +242,17 @@ function Dashboard({ db, role }: { db: Firestore | null; role: Role }) {
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time project analytics</p>
           </div>
-          <span className="text-4xl">📊</span>
+          <div className="flex items-center gap-4">
+            <span className="text-4xl">📊</span>
+            {showSeedButton && (
+              <button
+                onClick={seedSampleData}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Load Sample Data
+              </button>
+            )}
+          </div>
         </div>
 
         {/* View Mode Tabs */}
@@ -214,7 +299,7 @@ function Dashboard({ db, role }: { db: Firestore | null; role: Role }) {
 
             <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
               <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Remaining</p>
-              <p className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">${((allocatedBudget-spentBudget)/1000).toFixed(0)}K</p>
+              <p className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">${(remainingBudgetAmount/1000).toFixed(0)}K</p>
             </div>
 
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
